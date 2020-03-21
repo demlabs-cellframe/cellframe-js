@@ -67,4 +67,4 @@
 /*
     WARNING: Type check is omitted!
 */
-char* extract_str(napi_env env, napi_value js_value);
+char* extract_str(napi_env env, napi_value js_value, size_t* size = nullptr);

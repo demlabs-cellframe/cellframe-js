@@ -4,7 +4,7 @@
 /*
     WARNING: Type check is omitted!
 */
-char* extract_str(napi_env env, napi_value js_value)
+char* extract_str(napi_env env, napi_value js_value, size_t* size)
 {
     size_t str_size;
     // Returns string size without NULL
@@ -15,6 +15,11 @@ char* extract_str(napi_env env, napi_value js_value)
     // Writes string + NULL
     status = napi_get_value_string_utf8(env, js_value, buffer, str_size + 1, &str_size);
     assert(status == napi_ok);
+
+    if (size != nullptr)
+    {
+        *size = str_size;
+    }
 
     return buffer;
 }
