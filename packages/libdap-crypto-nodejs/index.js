@@ -27,3 +27,11 @@ exports.base64 = {
         return addon.dap_enc_base64_decode(input, toDataTypeEnum(dataType));
     },
 };
+exports.base58 = {
+    encode: function base58_encode(input) {
+        return addon.dap_enc_base58_encode(input);
+    },
+    decode: function base58_decode(input) {
+        return addon.dap_enc_base58_decode(input);
+    },
+};

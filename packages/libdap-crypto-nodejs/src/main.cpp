@@ -2,6 +2,11 @@
 #include <node_api.h>
 #include <dap_enc_key.h>
 #include <dap_enc_base64.h>
+#undef _DAP_ENC_BASE64_H_
+#include <dap_enc_base58.h>
+#ifndef _DAP_ENC_BASE64_H_
+#define _DAP_ENC_BASE64_H_
+#endif
 #include <assert.h>
 #include "utils.h"
 
@@ -128,12 +133,82 @@ napi_value js_dap_enc_base64_encode(napi_env env, napi_callback_info info)
 */
 
 
+#define BASE58_ENCODE_SIZE(a_in_size) ((size_t) (138 * (a_in_size) / 100 + 1))
+#define BASE58_DECODE_SIZE(a_in_size) ((size_t) ((a_in_size) * 733 / 1000 + 1))
+
+napi_value js_dap_enc_base58_decode(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(1)
+
+    ARG_TYPE_CHECK(0, napi_string)
+
+    size_t buffer_size;
+    char* str_buffer = extract_str(env, args[0], &buffer_size);
+
+    void* result_buffer = nullptr;
+    //size_t result_buffer_size = BASE58_DECODE_SIZE(buffer_size);
+    size_t result_buffer_size = DAP_ENC_BASE58_DECODE_SIZE(buffer_size);
+    CHECK(napi_create_arraybuffer(env, result_buffer_size, &result_buffer, &js_result));
+
+    size_t result_size = dap_enc_base58_decode(str_buffer, result_buffer);
+
+    delete[] str_buffer;
+
+    return js_result;
+}
+
+napi_value js_dap_enc_base58_encode(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(1)
+
+    ARG_TYPE_CHECK(0, napi_object)
+
+    bool is_array_buffer = false;
+    CHECK(napi_is_arraybuffer(env, args[0], &is_array_buffer));
+    if (is_array_buffer == false)
+    {
+        napi_throw_type_error(env, nullptr, "ArrayBuffer expected");
+        return nullptr;
+    }
+
+    size_t buffer_size;
+    void* buffer = nullptr;
+    CHECK(napi_get_arraybuffer_info(env, args[0], &buffer, &buffer_size));
+
+    //size_t result_buffer_size = BASE58_ENCODE_SIZE(buffer_size);
+    size_t result_buffer_size = DAP_ENC_BASE58_ENCODE_SIZE(buffer_size);
+    char* result_buffer = new char[result_buffer_size];
+
+    size_t result_size = dap_enc_base58_encode(buffer, buffer_size, result_buffer);
+
+    CHECK(napi_create_string_utf8(env, result_buffer, result_size, &js_result));
+
+    delete[] result_buffer;
+
+    return js_result;
+}
+
+
+/*
+*/
+
+
 static napi_value Init(napi_env env, napi_value exports)
 {
     napi_status status;
     napi_property_descriptor desc[] = {
         DECLARE_NAPI_METHOD("dap_enc_base64_decode", js_dap_enc_base64_decode),
         DECLARE_NAPI_METHOD("dap_enc_base64_encode", js_dap_enc_base64_encode),
+        DECLARE_NAPI_METHOD("dap_enc_base58_decode", js_dap_enc_base58_decode),
+        DECLARE_NAPI_METHOD("dap_enc_base58_encode", js_dap_enc_base58_encode),
     };
     status = napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc);
     assert(status == napi_ok);

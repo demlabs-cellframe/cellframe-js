@@ -3,19 +3,27 @@ var dapCrypto = require("./index.js");
 var textEncoder = new TextEncoder();
 var textDecoder = new TextDecoder("utf-8");
 
-var test_strings = ["", "a", "aa", "aaa", "aaaa", "aaaaa"];
-for (var i = 0, l = test_strings.length; i < l; ++i)
-{
-    var str = test_strings[i];
-    var u8array = textEncoder.encode(str);
-    var encoded = dapCrypto.base64.encode(u8array.buffer, "b64");
-    var arrayBuffer = dapCrypto.base64.decode(encoded, "b64");
-    var decoded = textDecoder.decode(arrayBuffer);
+var test_strings = ["", "a", "aa", "aaa", "aaaa", "aaaaa", "git@gitlab.demlabs.net:cellframe/libdap.git"];
 
-    console.log("Test 'Encode + Decode' #" + i);
-    console.log("Data:   ", str, " --> ", encoded);
-    console.log("Decoded:", decoded);
-    console.log("Array Before:", u8array.buffer);
-    console.log("Array After :", arrayBuffer);
-    console.log();
+function test_encode_decode(name, array, encode, decode)
+{
+    for (var i = 0, l = array.length; i < l; ++i)
+    {
+        var str = array[i];
+        var u8array = textEncoder.encode(str);
+        var encoded = encode(u8array.buffer);
+        var arrayBuffer = decode(encoded);
+        var decoded = textDecoder.decode(arrayBuffer);
+
+        console.log("Test '" + name + " Encode + Decode' #" + i);
+        console.log("Data:   ", str, " --> ", encoded);
+        console.log("Decoded:", decoded);
+        console.log("Array Before:", u8array.buffer);
+        console.log("Array After :", arrayBuffer);
+        console.log();
+    }
 }
+
+test_encode_decode("B64", test_strings, x => dapCrypto.base64.encode(x, "b64"), x => dapCrypto.base64.decode(x, "b64"));
+test_encode_decode("B64_URLSAFE", test_strings, x => dapCrypto.base64.encode(x, "b64_urlsafe"), x => dapCrypto.base64.decode(x, "b64_urlsafe"));
+test_encode_decode("B58", test_strings, dapCrypto.base58.encode, dapCrypto.base58.decode);
