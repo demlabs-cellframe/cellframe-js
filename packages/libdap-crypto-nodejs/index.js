@@ -19,19 +19,44 @@ function toDataTypeEnum(dataType) {
     return dataType;
 }
 
+function tryToGetArrayBuffer(input) {
+    if (input != null /*yes "!=", ignore linter*/ && input.buffer instanceof ArrayBuffer) {
+        return input.buffer;
+    }
+
+    return input;
+}
+
 exports.base64 = {
     encode: function base64_encode(input, dataType) {
-        return addon.dap_enc_base64_encode(input, toDataTypeEnum(dataType));
+        return addon.dap_enc_base64_encode(tryToGetArrayBuffer(input), toDataTypeEnum(dataType));
     },
-    decode: function base64_decode(input, dataType) {
-        return addon.dap_enc_base64_decode(input, toDataTypeEnum(dataType));
+    decode: function base64_decode(inputString, dataType) {
+        return addon.dap_enc_base64_decode(inputString, toDataTypeEnum(dataType));
     },
 };
 exports.base58 = {
     encode: function base58_encode(input) {
-        return addon.dap_enc_base58_encode(input);
+        return addon.dap_enc_base58_encode(tryToGetArrayBuffer(input));
     },
-    decode: function base58_decode(input) {
-        return addon.dap_enc_base58_decode(input);
+    decode: function base58_decode(inputString) {
+        return addon.dap_enc_base58_decode(inputString);
     },
+};
+exports.hash = {
+    chainStringToHashFast: function(inputString) {
+        return addon.dap_chain_str_to_hash_fast(inputString);
+    },
+    fast: function(input) {
+        return addon.dap_hash_fast(tryToGetArrayBuffer(input));
+    },
+    chainHashToStringFast: function(input) {
+        return addon.dap_chain_hash_fast_to_str(tryToGetArrayBuffer(input));
+    },
+    isEqualFast: function(hash_a, hash_b) {
+        return addon.dap_hash_fast_compare(tryToGetArrayBuffer(hash_a), tryToGetArrayBuffer(hash_b));
+    },
+    isBlankHashFast: function(input) {
+        return addon.dap_hash_fast_is_blank(tryToGetArrayBuffer(input));
+    }
 };
