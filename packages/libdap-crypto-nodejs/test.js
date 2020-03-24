@@ -44,3 +44,29 @@ console.log("Hash data :", hashTypedArray);
 console.log("Hash data2:", hashTypedArray2);
 console.log("Equality:", equal);
 console.log("isBlank:", isBlank);
+console.log();
+
+
+console.log("Test key functions");
+function test_keys(key_name) {
+    var key_data  = textEncoder.encode("1234567890");
+    var key_id    = textEncoder.encode("0987654321");
+    console.log("Creating key with type:", key_name);
+    var key = dapCrypto.key.create(dapCrypto.key.KeyTypes[key_name], key_data, key_id, 0);
+    var privateKeyArrayBuffer = key.serializePrivateKey();
+    var publicKeyArrayBuffer = key.serializePublicKey();
+    console.log('Serealized Public Key :', publicKeyArrayBuffer);
+    console.log('Serealized Private Key:', privateKeyArrayBuffer);
+    console.log("Creating empty key with type:", key_name)
+    var key2 = dapCrypto.key.create(dapCrypto.key.KeyTypes[key_name]);
+    console.log("Deserealizing...");
+    var res_1 = key2.deserializePrivateKey(privateKeyArrayBuffer);
+    var res_2 = key2.deserializePublicKey(privateKeyArrayBuffer);
+    key2.update();
+    console.log("Deserealization return codes:", res_1, "and", res_2);
+    console.log();
+}
+dapCrypto.key.init();
+test_keys("iaes");
+test_keys("msrln");
+dapCrypto.key.deinit();

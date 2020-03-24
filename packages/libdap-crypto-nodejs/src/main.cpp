@@ -8,8 +8,7 @@ extern "C" {
 }
 #include <assert.h>
 #include "utils.h"
-
-#define CHECK(x) status = (x); assert(status == napi_ok);
+#include "key.h"
 
 // WARNING: keep in sync with dap_enc_key.h
 bool is_dap_enc_data_type_valid(int32_t value)
@@ -415,8 +414,9 @@ static napi_value Init(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("dap_hash_fast_compare", js_dap_hash_fast_compare),
         DECLARE_NAPI_METHOD("dap_hash_fast_is_blank", js_dap_hash_fast_is_blank),
     };
-    status = napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc);
-    assert(status == napi_ok);
+    CHECK(napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc));
+
+    Key::Init(env, exports);
 
     return exports;
 }

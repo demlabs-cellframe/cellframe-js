@@ -58,5 +58,39 @@ exports.hash = {
     },
     isBlankHashFast: function(input) {
         return addon.dap_hash_fast_is_blank(tryToGetArrayBuffer(input));
-    }
+    },
+};
+
+// TODO: find a better solution later
+var origin_genKeyPublic = addon.Key.prototype.genKeyPublic;
+addon.Key.prototype.genKeyPublic = function genKeyPublic(input) {
+    return origin_genKeyPublic.call(this, tryToGetArrayBuffer(input));
+};
+var origin_deserializePublicKey = addon.Key.prototype.deserializePublicKey;
+addon.Key.prototype.deserializePublicKey = function deserializePublicKey(input) {
+    return origin_deserializePublicKey.call(this, tryToGetArrayBuffer(input));
+};
+var origin_deserializePrivateKey = addon.Key.prototype.deserializePrivateKey;
+addon.Key.prototype.deserializePrivateKey = function deserializePrivateKey(input) {
+    return origin_deserializePrivateKey.call(this, tryToGetArrayBuffer(input));
+};
+
+exports.key = {
+    KeyTypes: addon.KeyTypes,
+    Key: addon.Key,
+    create: function(keyType, kaxBuffer, seedBuffer, keySize) {
+        if (arguments.length == 1) {
+            return new addon.Key(keyType);
+        } else if (arguments.length == 4) {
+            return new addon.Key(keyType, tryToGetArrayBuffer(kaxBuffer), tryToGetArrayBuffer(seedBuffer), keySize);
+        } else {
+            throw new Error("1 or 4 arguments are expected");
+        }
+    },
+    init: function key_init() {
+        return addon.dap_enc_key_init();
+    },
+    deinit: function key_deinit() {
+        return addon.dap_enc_key_deinit();
+    },
 };
