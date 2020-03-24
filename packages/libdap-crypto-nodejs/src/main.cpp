@@ -2,11 +2,7 @@
 #include <node_api.h>
 #include <dap_enc_key.h>
 #include <dap_enc_base64.h>
-#undef _DAP_ENC_BASE64_H_
 #include <dap_enc_base58.h>
-#ifndef _DAP_ENC_BASE64_H_
-#define _DAP_ENC_BASE64_H_
-#endif
 extern "C" {
 #include <dap_hash.h>
 }
