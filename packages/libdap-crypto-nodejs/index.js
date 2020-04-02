@@ -27,7 +27,15 @@ function tryToGetArrayBuffer(input) {
     return input;
 }
 
+exports.init = function enc_init() {
+    return addon.dap_enc_init();
+};
+exports.deinit = function enc_deinit() {
+    return addon.dap_enc_deinit();
+};
+
 exports.base64 = {
+    DataTypes: dataTypes,
     encode: function base64_encode(input, dataType) {
         return addon.dap_enc_base64_encode(tryToGetArrayBuffer(input), toDataTypeEnum(dataType));
     },

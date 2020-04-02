@@ -24,6 +24,8 @@ function test_encode_decode(name, array, encode, decode)
     }
 }
 
+dapCrypto.init();
+
 test_encode_decode("B64", test_strings, x => dapCrypto.base64.encode(x, "b64"), x => dapCrypto.base64.decode(x, "b64"));
 test_encode_decode("B64_URLSAFE", test_strings, x => dapCrypto.base64.encode(x, "b64_urlsafe"), x => dapCrypto.base64.decode(x, "b64_urlsafe"));
 test_encode_decode("B58", test_strings, dapCrypto.base58.encode, dapCrypto.base58.decode);
@@ -66,7 +68,14 @@ function test_keys(key_name) {
     console.log("Deserealization return codes:", res_1, "and", res_2);
     console.log();
 }
+
 dapCrypto.key.init();
 test_keys("iaes");
 test_keys("msrln");
 dapCrypto.key.deinit();
+
+
+
+
+//
+dapCrypto.deinit();

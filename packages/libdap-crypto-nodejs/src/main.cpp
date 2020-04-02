@@ -1,5 +1,6 @@
 #include <cmath>
 #include <node_api.h>
+#include <dap_enc.h>
 #include <dap_enc_key.h>
 #include <dap_enc_base64.h>
 #include <dap_enc_base58.h>
@@ -400,6 +401,30 @@ napi_value js_dap_hash_fast_is_blank(napi_env env, napi_callback_info info)
 */
 
 
+napi_value js_dap_enc_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value js_result = nullptr;
+
+    int result = dap_enc_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_enc_deinit(napi_env env, napi_callback_info info)
+{
+    dap_enc_deinit();
+
+    return nullptr;
+}
+
+
+/*
+*/
+
+
 static napi_value Init(napi_env env, napi_value exports)
 {
     napi_status status;
@@ -413,6 +438,8 @@ static napi_value Init(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("dap_chain_hash_fast_to_str", js_dap_chain_hash_fast_to_str),
         DECLARE_NAPI_METHOD("dap_hash_fast_compare", js_dap_hash_fast_compare),
         DECLARE_NAPI_METHOD("dap_hash_fast_is_blank", js_dap_hash_fast_is_blank),
+        DECLARE_NAPI_METHOD("dap_enc_init", js_dap_enc_init),
+        DECLARE_NAPI_METHOD("dap_enc_deinit", js_dap_enc_deinit),
     };
     CHECK(napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc));
 
