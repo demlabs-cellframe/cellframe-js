@@ -5,19 +5,25 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_COLOR_MAKEFILE   ON)
 set (CMAKE_CXX_STANDARD 11)
 
-project (libdap-nodejs)
+project (libdap-crypto-nodejs)
 
 add_definitions("-fpic")
 add_definitions("-DDAP_LOG_MT")
 
 include_directories(${CMAKE_JS_INC})
 include_directories(../../deps/libdap/include)
+include_directories(../../deps/libdap-crypto/include)
 include_directories(../common/include)
 
 add_subdirectory(../../deps/libdap ./build/libdap)
+add_subdirectory(../../deps/libdap-crypto ./build/libdap-crypto)
 
 target_compile_options(
     dap_core PRIVATE 
+    "-fpic"
+)
+target_compile_options(
+    dap_crypto PRIVATE 
     "-fpic"
 )
 
@@ -29,6 +35,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME}
     ${CMAKE_JS_LIB}
     dap_core
+    dap_crypto
 )
 
 # Define NAPI_VERSION
