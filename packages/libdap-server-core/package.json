@@ -1,0 +1,14 @@
+{
+  "name": "libdap-server-core-nodejs",
+  "version": "0.1.0",
+  "description": "N-API Wrapper for libdap-server-core",
+  "private": true,
+  "dependencies": {
+    "bindings": "~1.2.1"
+  },
+  "scripts": {
+    "build": "cmka-js build",
+    "install": "cmake-js compile",
+    "test": "node test.js"
+  }
+}
