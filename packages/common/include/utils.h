@@ -40,6 +40,8 @@
   { name, 0, func, 0, 0, 0, napi_default, 0 }
 #define DECLARE_NAPI_JS_VALUE(name, js_value) \
   { name, 0, 0, 0, 0, js_value, napi_default, 0 }
+#define DECLARE_NAPI_PROPERTY(name, getter, setter) \
+  {name, 0, 0, getter, setter, 0, napi_default, 0}
 
 
 /*!

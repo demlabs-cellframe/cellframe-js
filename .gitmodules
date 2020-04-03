@@ -4,3 +4,6 @@
 [submodule "deps/libdap-crypto"]
 	path = deps/libdap-crypto
 	url = git@gitlab.demlabs.net:cellframe/libdap-crypto.git
+[submodule "deps/libdap-server-core"]
+	path = deps/libdap-server-core
+	url = git@gitlab.demlabs.net:cellframe/libdap-server-core.git
