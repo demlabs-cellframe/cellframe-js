@@ -20,3 +20,12 @@ events.start();
 events = null;
 console.log("Events deinititialization");
 dapServerCore.events.deinit();
+console.log();
+
+
+console.log("Socket inititialization");
+var socket_init_res = dapServerCore.socket.init();
+console.log("Socket inititialization return code:", socket_init_res);
+console.log("Socket deinititialization");
+dapServerCore.socket.deinit();
+console.log();

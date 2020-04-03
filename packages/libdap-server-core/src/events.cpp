@@ -53,6 +53,20 @@ napi_value Events::Init(napi_env env, napi_value exports)
     return exports;
 }
 
+bool Events::InstanceOf(napi_env env, napi_value object)
+{
+    napi_status status;
+    napi_value cons;
+    napi_value js_result = nullptr;
+    CHECK(napi_get_reference_value(env, constructor, &cons));
+
+    bool result = false;
+    CHECK(napi_instanceof(env, object, cons, &result));
+    CHECK(napi_get_boolean(env, result, &js_result));
+
+    return js_result;
+}
+
 napi_value Events::New(napi_env env, napi_callback_info info)
 {
     napi_status status;

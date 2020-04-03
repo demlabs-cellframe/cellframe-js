@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "server.h"
 #include "events.h"
-
+#include "events_socket.h"
 
 
 
@@ -25,6 +25,7 @@ static napi_value Init(napi_env env, napi_value exports)
 
     Server::Init(env, exports);
     Events::Init(env, exports);
+    EventsSocket::Init(env, exports);
 
     return exports;
 }

@@ -5,13 +5,12 @@ extern "C" {
 #include <dap_events.h>
 }
 
-class Events
+struct Events
 {
-public:
     static napi_value Init(napi_env env, napi_value exports);
     static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
+    static bool InstanceOf(napi_env env, napi_value object);
 
-private:
     explicit Events();
     ~Events();
 

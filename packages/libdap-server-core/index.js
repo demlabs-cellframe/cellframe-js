@@ -41,3 +41,16 @@ exports.events = {
         return addon.dap_events_deinit();
     },
 };
+
+exports.socket = {
+    EventsSocket: addon.EventsSocket,
+    find: function socket_find(sock, events_instance) {
+        return new addon.EventsSocket(sock, events_instance);
+    },
+    init : function socket_init() {
+        return addon.dap_events_socket_init();
+    },
+    deinit : function socket_deinit() {
+        return addon.dap_events_socket_deinit();
+    },
+};
