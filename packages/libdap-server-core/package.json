@@ -7,7 +7,6 @@
     "bindings": "~1.2.1"
   },
   "scripts": {
-    "build": "cmka-js build",
     "install": "cmake-js compile",
     "test": "node test.js"
   }

@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include "server.h"
+#include "events.h"
 
 
 
@@ -23,6 +24,7 @@ static napi_value Init(napi_env env, napi_value exports)
     CHECK(napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc));
 
     Server::Init(env, exports);
+    Events::Init(env, exports);
 
     return exports;
 }

@@ -24,7 +24,20 @@ exports.server = {
     init: function server_init(threads_count) {
         return addon.dap_server_init(threads_count);
     },
-    deinit: function server_init() {
+    deinit: function server_deinit() {
         return addon.dap_server_deinit();
+    },
+};
+
+exports.events = {
+    Events: addon.Events,
+    create: function events_create() {
+        return new addon.Events();
+    },
+    init: function events_init(threads_count, connection_timeout) {
+        return addon.dap_events_init(threads_count, connection_timeout);
+    },
+    deinit: function events_deinit() {
+        return addon.dap_events_deinit();
     },
 };
