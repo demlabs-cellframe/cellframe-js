@@ -5,13 +5,12 @@ extern "C" {
 #include <dap_server.h>
 }
 
-class Server
+struct Server
 {
-public:
     static napi_value Init(napi_env env, napi_value exports);
     static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
+    static bool InstanceOf(napi_env env, napi_value object);
 
-private:
     explicit Server(const char *addr, uint16_t port, dap_server_type_t type);
     ~Server();
 
