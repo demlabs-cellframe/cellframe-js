@@ -13,7 +13,7 @@ add_definitions("-fpic")
 add_definitions("-DDAP_LOG_MT")
 
 include_directories(${CMAKE_JS_INC})
-include_directories(../../deps/libdap/include)
+include_directories(../../deps/cellframe-sdk/libdap/include)
 include_directories(../common/include)
 
 add_subdirectory(../../deps/cellframe-sdk ./build/cellframe-sdk EXCLUDE_FROM_ALL)
