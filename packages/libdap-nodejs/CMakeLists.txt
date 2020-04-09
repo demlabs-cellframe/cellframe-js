@@ -5,6 +5,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_COLOR_MAKEFILE   ON)
 set (CMAKE_CXX_STANDARD 11)
 
+set(SUBMODULES_NO_BUILD ON)
+
 project (libdap-nodejs)
 
 add_definitions("-fpic")
@@ -14,12 +16,7 @@ include_directories(${CMAKE_JS_INC})
 include_directories(../../deps/libdap/include)
 include_directories(../common/include)
 
-add_subdirectory(../../deps/libdap ./build/libdap)
-
-target_compile_options(
-    dap_core PRIVATE 
-    "-fpic"
-)
+add_subdirectory(../../deps/cellframe-sdk ./build/cellframe-sdk EXCLUDE_FROM_ALL)
 
 file(GLOB SOURCE_FILES "src/*.cpp" "../common/cpp/*.cpp")
 
