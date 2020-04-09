@@ -7,3 +7,6 @@
 [submodule "deps/libdap-server-core"]
 	path = deps/libdap-server-core
 	url = git@gitlab.demlabs.net:cellframe/libdap-server-core.git
+[submodule "deps/cellframe-sdk"]
+	path = deps/cellframe-sdk
+	url = git@gitlab.demlabs.net:cellframe/cellframe-sdk.git
