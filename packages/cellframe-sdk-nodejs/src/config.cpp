@@ -42,6 +42,7 @@ napi_value Config::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("getUint16", GetUint16),
         DECLARE_NAPI_METHOD("getDouble", GetDouble),
         DECLARE_NAPI_METHOD("getBool", GetBool),
+        DECLARE_NAPI_METHOD("makeItGlobal", MakeItGlobal),
     };
 
     napi_value cons;
@@ -645,4 +646,18 @@ napi_value Config::GetBool(napi_env env, napi_callback_info info)
     assert(status == napi_ok);
 
     return js_result;
+}
+
+napi_value Config::MakeItGlobal(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value jsthis;
+    CHECK(napi_get_cb_info(env, info, nullptr, nullptr, &jsthis, nullptr));
+
+    Config* obj;
+    CHECK(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&obj)));
+
+    g_config = obj->config_;
+
+    return nullptr;
 }

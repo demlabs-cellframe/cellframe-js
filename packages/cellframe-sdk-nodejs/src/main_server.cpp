@@ -49,7 +49,7 @@ napi_value js_dap_http_new(napi_env env, napi_callback_info info)
     ARG_TYPE_CHECK(0, napi_object)
     ARG_TYPE_CHECK(1, napi_string)
 
-    if (Server::InstanceOf(env, args[0]) == false)
+    if (InstanceOf<Server>(env, args[0]) == false)
     {
         napi_throw_type_error(env, nullptr, "Server instance expected");
         return nullptr;
@@ -108,7 +108,7 @@ napi_value js_enc_http_add_proc(napi_env env, napi_callback_info info)
     ARG_TYPE_CHECK(0, napi_object)
     ARG_TYPE_CHECK(1, napi_string)
 
-    if (Server::InstanceOf(env, args[0]) == false)
+    if (InstanceOf<Server>(env, args[0]) == false)
     {
         napi_throw_type_error(env, nullptr, "Server instance expected");
         return nullptr;

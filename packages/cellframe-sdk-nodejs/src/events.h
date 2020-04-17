@@ -9,7 +9,6 @@ struct Events
 {
     static napi_value Init(napi_env env, napi_value exports);
     static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
-    static bool InstanceOf(napi_env env, napi_value object);
 
     explicit Events();
     ~Events();

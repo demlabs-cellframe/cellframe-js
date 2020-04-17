@@ -78,7 +78,7 @@ napi_value EventsSocket::New(napi_env env, napi_callback_info info)
         int sock;
         CHECK(napi_get_value_int(env, args[0], &sock));
 
-        if (Events::InstanceOf(env, args[1]) == false)
+        if (InstanceOf<Events>(env, args[1]) == false)
         {
             napi_throw_type_error(env, nullptr, "Events instance expected");
             return nullptr;

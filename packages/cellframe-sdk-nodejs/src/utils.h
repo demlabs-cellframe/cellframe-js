@@ -90,3 +90,17 @@ int extract_array_buffer(napi_env env, napi_value js_value, void** buffer, size_
 
 napi_status napi_get_value_size(napi_env env, napi_value js_value, size_t* result);
 napi_status napi_create_size(napi_env env, size_t value, napi_value* result);
+
+
+template<class T>
+bool InstanceOf(napi_env env, napi_value object)
+{
+    napi_status status;
+    napi_value cons;
+    CHECK(napi_get_reference_value(env, T::constructor, &cons));
+
+    bool result = false;
+    CHECK(napi_instanceof(env, object, cons, &result));
+
+    return result;
+}
