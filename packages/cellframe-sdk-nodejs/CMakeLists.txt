@@ -29,6 +29,7 @@ include_directories(../../deps/cellframe-sdk/libdap-server-udp)
 include_directories(../../deps/cellframe-sdk/libdap-server/http_server)
 include_directories(../../deps/cellframe-sdk/libdap-server/enc_server)
 include_directories(../../deps/cellframe-sdk/libdap-stream/stream)
+include_directories(../../deps/cellframe-sdk/libdap-app-cli/include)
 
 add_subdirectory(../../deps/cellframe-sdk ./build/cellframe-sdk EXCLUDE_FROM_ALL)
 
@@ -46,6 +47,7 @@ target_link_libraries(${PROJECT_NAME}
     dap_http_server
     dap_enc_server
     dap_stream
+    dap_app_cli
 )
 
 # Define NAPI_VERSION

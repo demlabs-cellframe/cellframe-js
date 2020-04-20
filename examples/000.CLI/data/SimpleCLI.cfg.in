@@ -1,0 +1,3 @@
+[conserver]
+enabled=true
+listen_unix_socket_path=/tmp/node_cli
