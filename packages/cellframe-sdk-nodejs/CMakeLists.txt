@@ -51,5 +51,5 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Define NAPI_VERSION
-add_definitions(-DNAPI_VERSION=3)
+add_definitions(-DNAPI_VERSION=4)
 

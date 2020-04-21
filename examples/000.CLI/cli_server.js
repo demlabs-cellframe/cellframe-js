@@ -18,6 +18,12 @@ dap.chain.net.cli.init(cfg);
 
 // -----------------------------------------
 
+function test_cmd() {
+    return "USER STRING";
+}
+
+dap.chain.net.cli.addCmd("user", test_cmd, undefined, "This is a test func", "Test func returns 'USER STRING' and does nothing else");
+
 var active = true;
 
 // To prevent node proccess from exiting
