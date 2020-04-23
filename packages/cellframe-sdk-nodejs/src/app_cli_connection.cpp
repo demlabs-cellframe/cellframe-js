@@ -155,7 +155,7 @@ napi_value AppCLIConnection::PostCommand(napi_env env, napi_callback_info info)
         cmd.cmd_param_count = app_cli_argc - 1;
         if (cmd.cmd_param_count > 0)
         {
-            cmd.cmd_param = (char**) (app_cli_argv + 2);
+            cmd.cmd_param = (char**) (app_cli_argv + 1);
         }
 
         AppCLIConnection* obj;

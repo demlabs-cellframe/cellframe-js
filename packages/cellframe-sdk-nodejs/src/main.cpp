@@ -6,7 +6,10 @@ napi_value CryptoInit(napi_env env, napi_value exports);
 napi_value ServerCoreInit(napi_env env, napi_value exports);
 napi_value StreamInit(napi_env env, napi_value exports);
 napi_value ServerInit(napi_env env, napi_value exports);
+napi_value ChainInit(napi_env env, napi_value exports);
 napi_value ChainNetInit(napi_env env, napi_value exports);
+napi_value ChainNetSrvInit(napi_env env, napi_value exports);
+napi_value ChainGlobalDBInit(napi_env env, napi_value exports);
 napi_value ApplicationCLIInit(napi_env env, napi_value exports);
 
 
@@ -17,7 +20,10 @@ static napi_value Init(napi_env env, napi_value exports)
     exports = ServerCoreInit(env, exports);
     exports = StreamInit(env, exports);
     exports = ServerInit(env, exports);
+    exports = ChainInit(env, exports);
     exports = ChainNetInit(env, exports);
+    exports = ChainNetSrvInit(env, exports);
+    exports = ChainGlobalDBInit(env, exports);
     exports = ApplicationCLIInit(env, exports);
     return exports;
 }

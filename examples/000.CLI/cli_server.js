@@ -18,11 +18,12 @@ dap.chain.net.cli.init(cfg);
 
 // -----------------------------------------
 
-function test_cmd() {
-    return "USER STRING";
+function test_cmd(context) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return "[USER STRING] context: '" + context + "', args: " + args.join(' ');
 }
 
-dap.chain.net.cli.addCmd("user", test_cmd, undefined, "This is a test func", "Test func returns 'USER STRING' and does nothing else");
+dap.chain.net.cli.addCmd("user", test_cmd, {'context': 'context'}, "This is a test func", "Test func returns 'USER STRING', context and arguments");
 
 var active = true;
 

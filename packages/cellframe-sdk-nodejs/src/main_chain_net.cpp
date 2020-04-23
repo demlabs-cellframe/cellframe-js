@@ -3,6 +3,7 @@
 #include <uv.h>
 
 extern "C" {
+#include <dap_chain_net.h>
 #include <dap_chain_node_cli.h>
 }
 
@@ -14,13 +15,40 @@ extern "C" {
 
 
 /*
+    Chain Net
+*/
+
+
+napi_value js_dap_chain_net_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    int result = dap_chain_net_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_chain_net_deinit(napi_env env, napi_callback_info info)
+{
+    dap_chain_net_deinit();
+
+    return nullptr;
+}
+
+
+/*
     Chain Node CLI
 */
 
 
 struct CommandContext {
     napi_threadsafe_function func;
-    napi_value js_context;
+    napi_ref js_context_ref;
 };
 
 struct CommandData {
@@ -68,7 +96,12 @@ napi_value js_dap_chain_node_cli_delete(napi_env env, napi_callback_info info)
 
 void js_call_finalize(napi_env env, void* finalize_data, void* finalize_hint)
 {
+    log_it(L_DEBUG, "JS Finalizer is called");
     CommandContext* cmd_context = (CommandContext*)finalize_data;
+    if (cmd_context->js_context_ref)
+    {
+        napi_delete_reference(env, cmd_context->js_context_ref);
+    }
     delete cmd_context;
 }
 
@@ -119,13 +152,23 @@ void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
     napi_value *cmd_argv = new napi_value[cmd_argc];
     napi_value js_result = nullptr;
     napi_value undefined;
+    napi_value js_context = nullptr;
     napi_valuetype arg_type;
     napi_status status;
     int result = 0;
 
     CHECK(napi_get_undefined(env, &undefined));
 
-    cmd_argv[0] = cmd_context->js_context;
+    if (cmd_context->js_context_ref)
+    {
+        CHECK(napi_get_reference_value(env, cmd_context->js_context_ref, &js_context));
+    }
+    else
+    {
+        js_context = undefined;
+    }
+
+    cmd_argv[0] = js_context;
 
     for (int i = 0; i < argc; ++i)
     {
@@ -157,7 +200,7 @@ void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
     }
     else if (arg_type != napi_string)
     {
-        log_it(L_ERROR, "Return value from JS callback is not a string");
+        log_it(L_ERROR, "Value returned from JS callback is not a string");
         result = 0xDEADBEAF;
     }
     else if (cmd_data->str_reply)
@@ -189,17 +232,30 @@ napi_value js_dap_chain_node_cli_cmd_item_create(napi_env env, napi_callback_inf
 
     ARG_TYPE_CHECK(0, napi_string)
     ARG_TYPE_CHECK(1, napi_function)
-    //             2  context of any type
+    //             2  context can be null, undefined or object
     ARG_TYPE_CHECK(3, napi_string)
     ARG_TYPE_CHECK(4, napi_string)
 
+    napi_valuetype context_type;
+    CHECK(napi_typeof(env, args[2], &context_type));
+    if (context_type != napi_undefined && context_type != napi_null && context_type != napi_object)
+    {
+        napi_throw_type_error(env, nullptr, "Wrong context type: must be undefined, null or object");
+        return nullptr;
+    }
+
     char* cmd_name_buffer = extract_str(env, args[0], nullptr);
     napi_value func = args[1];
-    napi_value js_context = args[2];
     char* cmd_doc_buffer = extract_str(env, args[3], nullptr);
     char* cmd_doc_ex_buffer = extract_str(env, args[4], nullptr);
 
-    CommandContext *cmd_context = new CommandContext{ nullptr, js_context };
+    CommandContext *cmd_context = new CommandContext();
+    napi_value js_context = args[2];
+
+    if (context_type == napi_object)
+    {
+        CHECK(napi_create_reference(env, js_context, 1, &cmd_context->js_context_ref));
+    }
 
     // TODO: When can I release this reference?!!
     CHECK(napi_create_threadsafe_function(env, func, nullptr, args[0], 0, 1,
@@ -225,6 +281,8 @@ napi_value ChainNetInit(napi_env env, napi_value exports)
 {
     napi_status status;
     napi_property_descriptor desc[] = {
+        DECLARE_NAPI_METHOD("dap_chain_net_init", js_dap_chain_net_init),
+        DECLARE_NAPI_METHOD("dap_chain_net_deinit", js_dap_chain_net_deinit),
         DECLARE_NAPI_METHOD("dap_chain_node_cli_init", js_dap_chain_node_cli_init),
         DECLARE_NAPI_METHOD("dap_chain_node_cli_delete", js_dap_chain_node_cli_delete),
         DECLARE_NAPI_METHOD("dap_chain_node_cli_cmd_item_create", js_dap_chain_node_cli_cmd_item_create),
