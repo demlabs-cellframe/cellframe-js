@@ -23,7 +23,12 @@ include_directories(../../deps/cellframe-sdk/libdap-server-core/include)
 include_directories(../../deps/cellframe-sdk/libdap-chain-common/include)
 include_directories(../../deps/cellframe-sdk/libdap-chain-mempool)
 include_directories(../../deps/cellframe-sdk/libdap-chain)
+include_directories(../../deps/cellframe-sdk/libdap-chain-wallet)
+include_directories(../../deps/cellframe-sdk/libdap-chain-gdb)
 include_directories(../../deps/cellframe-sdk/libdap-chain-global-db)
+include_directories(../../deps/cellframe-sdk/libdap-chain-cs-dag)
+include_directories(../../deps/cellframe-sdk/libdap-chain-cs-dag-poa)
+include_directories(../../deps/cellframe-sdk/libdap-chain-cs-dag-pos)
 include_directories(../../deps/cellframe-sdk/libdap-chain-net)
 include_directories(../../deps/cellframe-sdk/libdap-server-udp)
 include_directories(../../deps/cellframe-sdk/libdap-server/http_server)
@@ -48,6 +53,10 @@ target_link_libraries(${PROJECT_NAME}
     dap_enc_server
     dap_stream
     dap_app_cli
+    dap_chain_gdb
+    dap_chain_cs_dag
+    dap_chain_cs_dag_poa
+    dap_chain_cs_dag_pos
 )
 
 # Define NAPI_VERSION

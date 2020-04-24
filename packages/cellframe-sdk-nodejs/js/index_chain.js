@@ -9,12 +9,57 @@ exports.chain = {
     },
 };
 
+exports.chain.gdb = {
+    init: function chain_gdb_init() {
+        return addon.dap_chain_gdb_init();
+    },
+    deinit: function chain_gdb_deinit() {
+        return addon.dap_chain_gdb_deinit();
+    },
+};
+
 exports.chain.globalDB = {
     init: function chain_global_db_init(config) {
         return addon.dap_chain_global_db_init(config);
     },
     deinit: function chain_global_db_deinit() {
         return addon.dap_chain_global_db_deinit();
+    },
+};
+
+exports.chain.wallet = {
+    init: function chain_wallet_init() {
+        return addon.dap_chain_wallet_init();
+    },
+    deinit: function chain_wallet_deinit() {
+        return addon.dap_chain_wallet_deinit();
+    },
+};
+
+exports.chain.dag = {
+    init: function chain_dag_init() {
+        return addon.dap_chain_cs_dag_init();
+    },
+    deinit: function chain_dag_deinit() {
+        return addon.dap_chain_cs_dag_deinit();
+    },
+};
+
+exports.chain.dag.pos = {
+    init: function chain_dag_pos_init() {
+        return addon.dap_chain_cs_dag_pos_init();
+    },
+    deinit: function chain_dag_pos_deinit() {
+        return addon.dap_chain_cs_dag_pos_deinit();
+    },
+};
+
+exports.chain.dag.poa = {
+    init: function chain_dag_poa_init() {
+        return addon.dap_chain_cs_dag_poa_init();
+    },
+    deinit: function chain_dag_poa_deinit() {
+        return addon.dap_chain_cs_dag_poa_deinit();
     },
 };
 

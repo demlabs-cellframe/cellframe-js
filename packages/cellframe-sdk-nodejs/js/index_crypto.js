@@ -85,10 +85,23 @@ addon.Key.prototype.deserializePrivateKey = function deserializePrivateKey(input
     return origin_deserializePrivateKey.call(this, tryToGetArrayBuffer(input));
 };
 
+function tryToConvertKeyType(keyType) {
+    if (Object.prototype.toString.call(keyType) === "[object String]") {
+        keyType = keyType.toLowerCase();
+        if (addon.KeyTypes.hasOwnProperty(keyType) == false) {
+            throw new Error("Unknown key type");
+        }
+        return addon.KeyTypes[keyType];
+    }
+    return keyType;
+}
+
 exports.key = {
     KeyTypes: addon.KeyTypes,
     Key: addon.Key,
+    tryToConvertKeyType: tryToConvertKeyType,
     create: function(keyType, kaxBuffer, seedBuffer, keySize) {
+        keyType = tryToConvertKeyType(keyType);
         if (arguments.length == 1) {
             return new addon.Key(keyType);
         } else if (arguments.length == 4) {
