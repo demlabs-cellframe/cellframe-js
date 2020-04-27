@@ -4,6 +4,7 @@
 extern "C" {
 #include <dap_http.h>
 #include <dap_enc_http.h>
+#include <dap_http_simple.h>
 }
 
 #include "utils.h"
@@ -129,6 +130,33 @@ napi_value js_enc_http_add_proc(napi_env env, napi_callback_info info)
 
 
 /*
+    HTTP Simple
+*/
+
+
+napi_value js_dap_http_simple_module_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    int result = dap_http_simple_module_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_http_simple_module_deinit(napi_env env, napi_callback_info info)
+{
+    dap_http_simple_module_deinit();
+
+    return nullptr;
+}
+
+
+/*
 */
 
 
@@ -142,6 +170,8 @@ napi_value ServerInit(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("enc_http_init", js_enc_http_init),
         DECLARE_NAPI_METHOD("enc_http_deinit", js_enc_http_deinit),
         DECLARE_NAPI_METHOD("enc_http_add_proc", js_enc_http_add_proc),
+        DECLARE_NAPI_METHOD("dap_http_simple_module_init", js_dap_http_simple_module_init),
+        DECLARE_NAPI_METHOD("dap_http_simple_module_deinit", js_dap_http_simple_module_deinit),
     };
     CHECK(napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc));
 

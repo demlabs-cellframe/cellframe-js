@@ -12,7 +12,7 @@ exports.stream = {
     },
 };
 
-exports.streamCtl = {
+exports.stream.ctl = {
     init: function stream_ctl_init(keyType, size) {
         return addon.dap_stream_ctl_init(keyType, size);
     },
@@ -23,3 +23,33 @@ exports.streamCtl = {
         return addon.dap_stream_ctl_add_proc(server, urlComponent);
     },
 };
+
+exports.stream.channel = {};
+
+exports.stream.channel.chain = {
+    init: function stream_ch_chain_init() {
+        return addon.dap_stream_ch_chain_init();
+    },
+    deinit: function stream_ch_chain_deinit() {
+        return addon.dap_stream_ch_chain_deinit();
+    },
+};
+
+exports.stream.channel.chain.net = {
+    init: function stream_ch_chain_net_init() {
+        return addon.dap_stream_ch_chain_net_init();
+    },
+    deinit: function stream_ch_chain_net_deinit() {
+        return addon.dap_stream_ch_chain_net_deinit();
+    },
+};
+
+exports.stream.channel.chain.net.srv = {
+    init: function stream_ch_chain_net_srv_init() {
+        return addon.dap_stream_ch_chain_net_srv_init();
+    },
+    deinit: function stream_ch_chain_net_srv_deinit() {
+        return addon.dap_stream_ch_chain_net_srv_deinit();
+    },
+};
+

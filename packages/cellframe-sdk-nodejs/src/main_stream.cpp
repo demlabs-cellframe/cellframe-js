@@ -6,6 +6,12 @@ extern "C" {
 #include <dap_http.h>
 #include <dap_stream.h>
 #include <dap_stream_ctl.h>
+// TODO: can't compile with c++
+//#include <dap_stream_ch_chain.h>
+int dap_stream_ch_chain_init(void);
+void dap_stream_ch_chain_deinit(void);
+#include <dap_stream_ch_chain_net.h>
+#include <dap_stream_ch_chain_net_srv.h>
 }
 
 #include "utils.h"
@@ -78,6 +84,7 @@ napi_value js_dap_stream_add_proc_http(napi_env env, napi_callback_info info)
 
 
 /*
+    Stream Control
 */
 
 
@@ -150,6 +157,90 @@ napi_value js_dap_stream_ctl_add_proc(napi_env env, napi_callback_info info)
 
 
 /*
+    Stream Channel: Chain
+*/
+
+
+napi_value js_dap_stream_ch_chain_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    int result = dap_stream_ch_chain_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_stream_ch_chain_deinit(napi_env env, napi_callback_info info)
+{
+    dap_stream_ch_chain_deinit();
+
+    return nullptr;
+}
+
+
+/*
+    Stream Channel: Chain Net
+*/
+
+
+napi_value js_dap_stream_ch_chain_net_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    int result = dap_stream_ch_chain_net_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_stream_ch_chain_net_deinit(napi_env env, napi_callback_info info)
+{
+    dap_stream_ch_chain_net_deinit();
+
+    return nullptr;
+}
+
+
+/*
+    Stream Channel: Chain Net Service
+*/
+
+
+napi_value js_dap_stream_ch_chain_net_srv_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    int result = dap_stream_ch_chain_net_srv_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_stream_ch_chain_net_srv_deinit(napi_env env, napi_callback_info info)
+{
+    dap_stream_ch_chain_net_srv_deinit();
+
+    return nullptr;
+}
+
+
+/*
 */
 
 
@@ -163,6 +254,12 @@ napi_value StreamInit(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("dap_stream_ctl_init", js_dap_stream_ctl_init),
         DECLARE_NAPI_METHOD("dap_stream_ctl_deinit", js_dap_stream_ctl_deinit),
         DECLARE_NAPI_METHOD("dap_stream_ctl_add_proc", js_dap_stream_ctl_add_proc),
+        DECLARE_NAPI_METHOD("dap_stream_ch_chain_init", js_dap_stream_ch_chain_init),
+        DECLARE_NAPI_METHOD("dap_stream_ch_chain_deinit", js_dap_stream_ch_chain_deinit),
+        DECLARE_NAPI_METHOD("dap_stream_ch_chain_net_init", js_dap_stream_ch_chain_net_init),
+        DECLARE_NAPI_METHOD("dap_stream_ch_chain_net_deinit", js_dap_stream_ch_chain_net_deinit),
+        DECLARE_NAPI_METHOD("dap_stream_ch_chain_net_srv_init", js_dap_stream_ch_chain_net_srv_init),
+        DECLARE_NAPI_METHOD("dap_stream_ch_chain_net_srv_deinit", js_dap_stream_ch_chain_net_srv_deinit),
     };
     CHECK(napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc));
 

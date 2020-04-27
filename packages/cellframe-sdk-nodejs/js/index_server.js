@@ -12,7 +12,7 @@ exports.http = {
     },
 };
 
-exports.httpEnc = {
+exports.http.enc = {
     init: function enc_http_init() {
         return addon.enc_http_init();
     },
@@ -21,5 +21,14 @@ exports.httpEnc = {
     },
     addProc: function add_proc(server, url) {
         return addon.enc_http_add_proc(server, url);
+    },
+};
+
+exports.http.simple = {
+    init: function http_simple_init() {
+        return addon.dap_http_simple_module_init();
+    },
+    deinit: function http_simple_deinit() {
+        return addon.dap_http_simple_module_deinit();
     },
 };

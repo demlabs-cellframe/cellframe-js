@@ -57,6 +57,10 @@ target_link_libraries(${PROJECT_NAME}
     dap_chain_cs_dag
     dap_chain_cs_dag_poa
     dap_chain_cs_dag_pos
+    dap_stream_ch
+    dap_stream_ch_chain
+    dap_stream_ch_chain_net
+    dap_stream_ch_chain_net_srv
 )
 
 # Define NAPI_VERSION
