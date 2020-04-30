@@ -15,6 +15,7 @@ struct Config
     static napi_value New(napi_env env, napi_callback_info info);
     static napi_value Close(napi_env env, napi_callback_info info);
     static napi_value GetString(napi_env env, napi_callback_info info);
+    static napi_value GetStringArray(napi_env env, napi_callback_info info);
     static napi_value GetInt32(napi_env env, napi_callback_info info);
     static napi_value GetInt64(napi_env env, napi_callback_info info);
     static napi_value GetUint64(napi_env env, napi_callback_info info);

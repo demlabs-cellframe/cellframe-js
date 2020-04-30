@@ -36,6 +36,7 @@ napi_value Config::Init(napi_env env, napi_value exports)
         //DECLARE_NAPI_METHOD("open", Open),
         DECLARE_NAPI_METHOD("close", Close),
         DECLARE_NAPI_METHOD("getString", GetString),
+        DECLARE_NAPI_METHOD("getStringArray", GetStringArray),
         DECLARE_NAPI_METHOD("getInt32", GetInt32),
         DECLARE_NAPI_METHOD("getInt64", GetInt64),
         DECLARE_NAPI_METHOD("getUint64", GetUint64),
@@ -218,6 +219,54 @@ napi_value Config::GetString(napi_env env, napi_callback_info info)
     }
 
     delete[] default_value_buffer;
+
+    return js_result;
+}
+
+napi_value Config::GetStringArray(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+
+    ARG_COUNT_CHECK_UNIQUE(2)
+
+    Config* obj;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&obj));
+    assert(status == napi_ok);
+
+    if (obj->config_ == nullptr)
+    {
+        napi_throw_type_error(env, nullptr, "Config is closed");
+        return nullptr;
+    }
+
+    ARG_TYPE_CHECK(0, napi_string)
+    ARG_TYPE_CHECK(1, napi_string)
+
+    char* section_buffer = extract_str(env, args[0]);
+    char* item_name_buffer = extract_str(env, args[1]);
+
+    uint16_t result_size;
+    char** result = nullptr;
+
+    result = dap_config_get_array_str(obj->config_, section_buffer, item_name_buffer, &result_size);
+
+    delete[] section_buffer;
+    delete[] item_name_buffer;
+
+    napi_value js_result = nullptr;
+
+    if (result)
+    {
+        CHECK(napi_create_array_with_length(env, result_size, &js_result));
+        napi_value tmp_str;
+
+        for (uint16_t i = 0; i < result_size; ++i)
+        {
+            CHECK(napi_create_string_utf8(env, result[i], NAPI_AUTO_LENGTH, &tmp_str));
+            CHECK(napi_set_element(env, js_result, i, tmp_str));
+        }
+    }
 
     return js_result;
 }
