@@ -34,6 +34,9 @@ exports.chain.wallet = {
     deinit: function chain_wallet_deinit() {
         return addon.dap_chain_wallet_deinit();
     },
+    create: function chain_wallet_create(name, folder_path, signature_type_name) {
+        return addon.dap_chain_wallet_create(name, folder_path, signature_type_name);
+    },
 };
 
 exports.chain.dag = {

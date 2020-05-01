@@ -3,6 +3,8 @@
 #include <node_api.h>
 #include <dap_enc_key.h>
 
+bool is_dap_key_type_valid(int32_t key_type);
+
 class Key
 {
 public:

@@ -3,6 +3,18 @@
 #include "key.h"
 
 
+// WARNING: keep in sync with dap_enc_key.h
+bool is_dap_key_type_valid(int32_t key_type)
+{
+    if (key_type < DAP_ENC_KEY_TYPE_IAES || key_type > DAP_ENC_KEY_TYPE_SIG_DILITHIUM)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
 napi_ref Key::constructor;
 
 Key::Key(dap_enc_key_type_t a_key_type)
@@ -138,8 +150,8 @@ napi_value Key::New(napi_env env, napi_callback_info info)
         if (valuetype == napi_number)
         {
             CHECK(napi_get_value_int32(env, args[0], &key_type));
-            // WARNING: keep in sync with dap_enc_key.h
-            if (key_type < DAP_ENC_KEY_TYPE_IAES || key_type > DAP_ENC_KEY_TYPE_SIG_DILITHIUM)
+
+            if (is_dap_key_type_valid(key_type) == false)
             {
                 napi_throw_type_error(env, nullptr, "Wrong key type: value out of range");
                 return nullptr;

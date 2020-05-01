@@ -6,6 +6,7 @@
 #include <dap_enc_base58.h>
 extern "C" {
 #include <dap_hash.h>
+#include <dap_cert.h>
 }
 #include <assert.h>
 #include "utils.h"
@@ -398,6 +399,68 @@ napi_value js_dap_hash_fast_is_blank(napi_env env, napi_callback_info info)
 
 
 /*
+    Certificates
+*/
+
+
+napi_value js_dap_cert_generate(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(3)
+
+    ARG_TYPE_CHECK(0, napi_string)
+    ARG_TYPE_CHECK(1, napi_string)
+    ARG_TYPE_CHECK(2, napi_number)
+
+    int32_t key_type;
+    CHECK(napi_get_value_int32(env, args[2], &key_type));
+
+    if (is_dap_key_type_valid(key_type) == false)
+    {
+        napi_throw_type_error(env, nullptr, "Wrong key type: value out of range");
+        return nullptr;
+    }
+
+    size_t name_buffer_size;
+    char* name_buffer = extract_str(env, args[0], &name_buffer_size);
+
+    size_t filepath_buffer_size;
+    char* filepath_buffer = extract_str(env, args[1], &filepath_buffer_size);
+
+    // TODO: create certificate class?
+    dap_cert_t* cert = dap_cert_generate(name_buffer, filepath_buffer, (dap_enc_key_type_t)key_type);
+    dap_cert_delete(cert);
+
+    delete[] name_buffer;
+    delete[] filepath_buffer;
+
+    return js_result;
+}
+
+napi_value js_dap_cert_init(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value js_result = nullptr;
+
+    int result = dap_cert_init();
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value js_dap_cert_deinit(napi_env env, napi_callback_info info)
+{
+    dap_cert_deinit();
+
+    return nullptr;
+}
+
+
+/*
 */
 
 
@@ -438,6 +501,9 @@ napi_value CryptoInit(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("dap_chain_hash_fast_to_str", js_dap_chain_hash_fast_to_str),
         DECLARE_NAPI_METHOD("dap_hash_fast_compare", js_dap_hash_fast_compare),
         DECLARE_NAPI_METHOD("dap_hash_fast_is_blank", js_dap_hash_fast_is_blank),
+        DECLARE_NAPI_METHOD("dap_cert_generate", js_dap_cert_generate),
+        DECLARE_NAPI_METHOD("dap_cert_init", js_dap_cert_init),
+        DECLARE_NAPI_METHOD("dap_cert_deinit", js_dap_cert_deinit),
         DECLARE_NAPI_METHOD("dap_enc_init", js_dap_enc_init),
         DECLARE_NAPI_METHOD("dap_enc_deinit", js_dap_enc_deinit),
     };

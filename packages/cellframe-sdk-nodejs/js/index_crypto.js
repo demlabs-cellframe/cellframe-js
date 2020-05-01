@@ -36,6 +36,19 @@ exports.crypto = {
     },
 };
 
+exports.crypto.cert = {
+    init: function cert_init() {
+        return addon.dap_cert_init();
+    },
+    deinit: function cert_deinit() {
+        return addon.dap_cert_deinit();
+    },
+    create: function dap_cert_create(name, filepath, keyType) {
+        keyType = tryToConvertKeyType(keyType);
+        return addon.dap_cert_generate(name, filepath, keyType);
+    },
+};
+
 exports.base64 = {
     DataTypes: dataTypes,
     encode: function base64_encode(input, dataType) {
