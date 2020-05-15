@@ -3,7 +3,7 @@
 #include <uv.h>
 
 extern "C" {
-#include <dap_chain_gdb.h>
+#include <dap_chain_cs_none.h>
 }
 
 #include "utils.h"

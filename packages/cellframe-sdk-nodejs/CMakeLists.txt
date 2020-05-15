@@ -10,31 +10,12 @@ set(SUBMODULES_NO_BUILD ON)
 project (cellframe-sdk-nodejs)
 
 add_definitions("-fpic")
-add_definitions("-DDAP_LOG_MT")
 
-
-if(UNIX)
-  add_definitions ("-DDAP_OS_UNIX")
-endif()
+set(CELLFRAME_MODULES "core chains mining network cs-dag-poa cs-dag-pos cs-none srv-vpn")
 
 include_directories(${CMAKE_JS_INC})
-include_directories(../../deps/cellframe-sdk/libdap-crypto/include)
-include_directories(../../deps/cellframe-sdk/libdap-server-core/include)
-include_directories(../../deps/cellframe-sdk/libdap-chain-common/include)
-include_directories(../../deps/cellframe-sdk/libdap-chain-mempool)
-include_directories(../../deps/cellframe-sdk/libdap-chain)
-include_directories(../../deps/cellframe-sdk/libdap-chain-wallet)
-include_directories(../../deps/cellframe-sdk/libdap-chain-gdb)
-include_directories(../../deps/cellframe-sdk/libdap-chain-global-db)
-include_directories(../../deps/cellframe-sdk/libdap-chain-cs-dag)
-include_directories(../../deps/cellframe-sdk/libdap-chain-cs-dag-poa)
-include_directories(../../deps/cellframe-sdk/libdap-chain-cs-dag-pos)
-include_directories(../../deps/cellframe-sdk/libdap-chain-net)
-include_directories(../../deps/cellframe-sdk/libdap-server-udp)
-include_directories(../../deps/cellframe-sdk/libdap-server/http_server)
-include_directories(../../deps/cellframe-sdk/libdap-server/enc_server)
-include_directories(../../deps/cellframe-sdk/libdap-stream/stream)
-include_directories(../../deps/cellframe-sdk/libdap-app-cli/include)
+
+include(../../deps/cellframe-sdk/cmake/OS_Detection.cmake)
 
 add_subdirectory(../../deps/cellframe-sdk ./build/cellframe-sdk EXCLUDE_FROM_ALL)
 
@@ -45,24 +26,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 
 target_link_libraries(${PROJECT_NAME}
     ${CMAKE_JS_LIB}
-    dap_core
-    dap_crypto
-    dap_server_core
-    dap_udp_server
-    dap_http_server
-    dap_enc_server
-    dap_stream
+    cellframe-sdk
     dap_app_cli
-    dap_chain_gdb
-    dap_chain_cs_dag
-    dap_chain_cs_dag_poa
-    dap_chain_cs_dag_pos
-    dap_stream_ch
-    dap_stream_ch_chain
-    dap_stream_ch_chain_net
-    dap_stream_ch_chain_net_srv
 )
 
 # Define NAPI_VERSION
 add_definitions(-DNAPI_VERSION=4)
-

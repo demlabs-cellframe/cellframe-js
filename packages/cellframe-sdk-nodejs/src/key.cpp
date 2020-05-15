@@ -66,24 +66,24 @@ napi_value Key::Init(napi_env env, napi_value exports)
     napi_value key_type_object;
     napi_value key_types[18];  // dap_enc_key.h
     CHECK(napi_create_object(env, &key_type_object));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_IAES,          key_types + 0));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_OAES,          key_types + 1));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_RLWE_NEWHOPE,  key_types + 2));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIDH_CLN16,    key_types + 3));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_DEFEO,         key_types + 4));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_MSRLN,         key_types + 5));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_RLWE_MSRLN16,  key_types + 6));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_RLWE_BCNS15,   key_types + 7));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_LWE_FRODO,     key_types + 8));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIDH_IQC_REF,  key_types + 9));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_CODE_MCBITS,   key_types + 10));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_NTRU,          key_types + 11));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_MLWE_KYBER,    key_types + 12));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_PICNIC,    key_types + 13));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_BLISS,     key_types + 14));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_TESLA,     key_types + 15));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_DILITHIUM, key_types + 16));
-    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_NULL,          key_types + 17));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_IAES,                  key_types + 0));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_OAES,                  key_types + 1));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_RLWE_NEWHOPE_CPA_KEM,  key_types + 2));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIDH_CLN16,            key_types + 3));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_DEFEO,                 key_types + 4));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_MSRLN,                 key_types + 5));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_RLWE_MSRLN16,          key_types + 6));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_RLWE_BCNS15,           key_types + 7));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_LWE_FRODO,             key_types + 8));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIDH_IQC_REF,          key_types + 9));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_CODE_MCBITS,           key_types + 10));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_NTRU,                  key_types + 11));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_MLWE_KYBER,            key_types + 12));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_PICNIC,            key_types + 13));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_BLISS,             key_types + 14));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_TESLA,             key_types + 15));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_SIG_DILITHIUM,         key_types + 16));
+    CHECK(napi_create_int32(env, dap_enc_key_type_t::DAP_ENC_KEY_TYPE_NULL,                  key_types + 17));
     napi_property_descriptor key_type_descriptors[] = {
         DECLARE_NAPI_JS_VALUE("iaes",          key_types[0]),
         DECLARE_NAPI_JS_VALUE("oaes",          key_types[1]),
