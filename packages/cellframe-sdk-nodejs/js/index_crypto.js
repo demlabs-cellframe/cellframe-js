@@ -47,6 +47,9 @@ exports.crypto.cert = {
         keyType = tryToConvertKeyType(keyType);
         return addon.dap_cert_generate(name, filepath, keyType);
     },
+    extractPublicKeyAsCert: function extract_pkey_as_cert(cert_name, new_cert_name, ca_folder) {
+        return addon.extract_pkey_as_cert(cert_name, new_cert_name, ca_folder);
+    },
 };
 
 exports.base64 = {

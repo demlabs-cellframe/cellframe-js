@@ -440,6 +440,62 @@ napi_value js_dap_cert_generate(napi_env env, napi_callback_info info)
     return js_result;
 }
 
+// Does not exist in C SDK
+napi_value js_extract_pkey_as_cert(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(3)
+
+    ARG_TYPE_CHECK(0, napi_string)
+    ARG_TYPE_CHECK(1, napi_string)
+    ARG_TYPE_CHECK(2, napi_string)
+
+    size_t name_buffer_size;
+    char* name_buffer = extract_str(env, args[0], &name_buffer_size);
+
+    size_t new_name_buffer_size;
+    char* new_name_buffer = extract_str(env, args[1], &new_name_buffer_size);
+
+    size_t ca_folder_buffer_size;
+    char* ca_folder_buffer = extract_str(env, args[2], &ca_folder_buffer_size);
+
+    dap_cert_t* old_cert = dap_cert_add_file(name_buffer, ca_folder_buffer);
+    if (old_cert == nullptr)
+    {
+        napi_throw_error(env, nullptr, "Can't load cert from file");
+        return nullptr;
+    }
+
+    if (old_cert->enc_key->pub_key_data_size == 0)
+    {
+        napi_throw_error(env, nullptr, "Cert does not contain public key");
+        return nullptr;
+    }
+
+    dap_cert_t* new_cert = dap_cert_new(new_name_buffer);
+    dap_enc_key_t* old_key = old_cert->enc_key;
+    dap_enc_key_t* new_key = dap_enc_key_new(old_cert->enc_key->type);
+    size_t key_size = old_key->pub_key_data_size;
+
+    // Copy only public key
+    new_key->pub_key_data = DAP_NEW_Z_SIZE(uint8_t, key_size);
+    memcpy(new_key->pub_key_data, old_key->pub_key_data, key_size);
+    new_key->pub_key_data_size = key_size;
+
+    new_cert->enc_key = new_key;
+    int result = dap_cert_save_to_folder(new_cert, ca_folder_buffer);
+    CHECK(napi_create_int(env, result, &js_result));
+
+    delete[] name_buffer;
+    delete[] new_name_buffer;
+    delete[] ca_folder_buffer;
+
+    return js_result;
+}
+
 napi_value js_dap_cert_init(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -502,6 +558,7 @@ napi_value CryptoInit(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("dap_hash_fast_compare", js_dap_hash_fast_compare),
         DECLARE_NAPI_METHOD("dap_hash_fast_is_blank", js_dap_hash_fast_is_blank),
         DECLARE_NAPI_METHOD("dap_cert_generate", js_dap_cert_generate),
+        DECLARE_NAPI_METHOD("extract_pkey_as_cert", js_extract_pkey_as_cert),
         DECLARE_NAPI_METHOD("dap_cert_init", js_dap_cert_init),
         DECLARE_NAPI_METHOD("dap_cert_deinit", js_dap_cert_deinit),
         DECLARE_NAPI_METHOD("dap_enc_init", js_dap_enc_init),
