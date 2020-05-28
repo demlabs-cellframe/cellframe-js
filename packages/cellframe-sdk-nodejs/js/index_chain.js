@@ -14,7 +14,7 @@ exports.chain.gdb = {
         return addon.dap_chain_gdb_init();
     },
     deinit: function chain_gdb_deinit() {
-        return addon.dap_chain_gdb_deinit();
+        // There is no deinit function
     },
 };
 

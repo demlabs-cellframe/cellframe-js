@@ -30,6 +30,8 @@ napi_value Server::Init(napi_env env, napi_value exports)
     napi_status status;
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_METHOD("loop", Loop),
+        DECLARE_NAPI_METHOD("start", Start),
+        DECLARE_NAPI_METHOD("stop", Stop),
     };
 
     napi_property_descriptor export_descriptors[] = {
@@ -135,6 +137,48 @@ napi_value Server::Loop(napi_env env, napi_callback_info info)
     int32_t result = dap_server_loop(obj->server_);
 
     CHECK(napi_create_int32(env, result, &js_result));
+
+    return js_result;
+}
+
+static void js_server_core_loop_thread(void* data)
+{
+    Server* obj = (Server*)data;
+    dap_server_loop(obj->server_);
+}
+
+napi_value Server::Start(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    Server* obj;
+    CHECK(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&obj)));
+
+    int result = uv_thread_create(&obj->loop_thread_, js_server_core_loop_thread, obj);
+
+    CHECK(napi_create_int(env, result, &js_result));
+
+    return js_result;
+}
+
+napi_value Server::Stop(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_valuetype arg_type;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    Server* obj;
+    CHECK(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&obj)));
+
+    dap_server_loop_stop();
+
+    assert(uv_thread_join(&obj->loop_thread_) == 0);
 
     return js_result;
 }

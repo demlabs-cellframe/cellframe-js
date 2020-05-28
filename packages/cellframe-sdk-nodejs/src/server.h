@@ -1,5 +1,6 @@
 #pragma once
 
+#include <uv.h>
 #include <node_api.h>
 extern "C" {
 #include <dap_server.h>
@@ -15,10 +16,14 @@ struct Server
 
     static napi_value New(napi_env env, napi_callback_info info);
     static napi_value Loop(napi_env env, napi_callback_info info);
+    static napi_value Start(napi_env env, napi_callback_info info);
+    static napi_value Stop(napi_env env, napi_callback_info info);
 
     static napi_ref constructor;
     napi_env env_;
     napi_ref wrapper_;
+
+    uv_thread_t loop_thread_;
 
     dap_server_t* server_;
 };

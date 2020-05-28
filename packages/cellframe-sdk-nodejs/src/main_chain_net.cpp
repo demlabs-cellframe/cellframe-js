@@ -263,6 +263,9 @@ napi_value js_dap_chain_node_cli_cmd_item_create(napi_env env, napi_callback_inf
                                           js_call_finalize /*finalizer*/,
                                           cmd_context, CallJS, &cmd_context->func));
 
+    // TODO: Since I don't know when to release it, this will allow event loop to exit while reference exists
+    CHECK(napi_unref_threadsafe_function(env, cmd_context->func));
+
     dap_chain_node_cli_cmd_item_create(cmd_name_buffer, cmd_function, cmd_context, cmd_doc_buffer, cmd_doc_ex_buffer);
 
     delete[] cmd_name_buffer;

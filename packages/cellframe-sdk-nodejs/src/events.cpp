@@ -31,6 +31,7 @@ napi_value Events::Init(napi_env env, napi_value exports)
     napi_status status;
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_METHOD("start", Start),
+        DECLARE_NAPI_METHOD("stop", Stop),
         DECLARE_NAPI_METHOD("wait", Wait),
         DECLARE_NAPI_METHOD("threadWakeUp", ThreadWakeUp),
     };
@@ -115,6 +116,12 @@ napi_value Events::Start(napi_env env, napi_callback_info info)
     CHECK(napi_create_int32(env, result, &js_result));
 
     return js_result;
+}
+
+napi_value Events::Stop(napi_env env, napi_callback_info info)
+{
+    dap_events_stop();
+    return nullptr;
 }
 
 napi_value Events::Wait(napi_env env, napi_callback_info info)

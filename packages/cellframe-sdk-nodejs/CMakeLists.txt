@@ -11,7 +11,7 @@ project (cellframe-sdk-nodejs)
 
 add_definitions("-fpic")
 
-set(CELLFRAME_MODULES "core chains mining network cs-dag-poa cs-dag-pos cs-none srv-vpn")
+set(CELLFRAME_MODULES "core chains network cs-dag-poa cs-dag-pos cs-none srv-")
 
 include_directories(${CMAKE_JS_INC})
 
@@ -32,3 +32,4 @@ target_link_libraries(${PROJECT_NAME}
 
 # Define NAPI_VERSION
 add_definitions(-DNAPI_VERSION=4)
+

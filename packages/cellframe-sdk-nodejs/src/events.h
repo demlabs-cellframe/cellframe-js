@@ -15,6 +15,7 @@ struct Events
 
     static napi_value New(napi_env env, napi_callback_info info);
     static napi_value Start(napi_env env, napi_callback_info info);
+    static napi_value Stop(napi_env env, napi_callback_info info);
     static napi_value Wait(napi_env env, napi_callback_info info);
     static napi_value ThreadWakeUp(napi_env env, napi_callback_info info);
 
