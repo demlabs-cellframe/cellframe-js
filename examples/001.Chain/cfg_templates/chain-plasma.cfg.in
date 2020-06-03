@@ -25,5 +25,5 @@ tokens_hold_value=$tokens__hold_value
 confirmations_minimum=1
 
 [files]
-storage_dir=./node_$node_num/network/devnet/plasma
+storage_dir=$plasma_storage_dir
 

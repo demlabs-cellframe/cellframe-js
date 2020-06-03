@@ -8,7 +8,7 @@ datum_types=[token,emission,transaction,shard,ca]
 consensus=dag_poa
 
 [files]
-storage_dir=./node_$node_num/network/devnet/zerochain/
+storage_dir=$zerochain_storage_dir
 
 [dag]
 is_single_line=true
@@ -25,4 +25,4 @@ datum_add_hashes_count=1
 auth_certs_prefix=$node_cert_prefix_poa
 auth_certs_number=$root_nodes_count
 auth_certs_number_verify=1 #4
-auth_certs_dir=./node_$node_num/ca
+auth_certs_dir=$auth_certs_dir

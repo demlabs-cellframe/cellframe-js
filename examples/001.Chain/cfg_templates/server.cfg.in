@@ -9,7 +9,7 @@ auto_online=true
 
 [conserver]
 enabled=true
-listen_unix_socket_path=/tmp/node_cli_$node_num
+listen_unix_socket_path=$listen_unix_socket_path
 
 
 [server]
@@ -27,15 +27,15 @@ stream_ctl_keytype_size=32
 [cdb]
 enabled=false
 servers_list_enabled=true
-servers_list_networks=[devnet]
+servers_list_networks=[$net_name]
 
 
 [resources]
 #   0 means auto detect
 threads_cnt=0
-pid_path=./node_$node_num/node_$node_num.pid
-log_file=./node_$node_num/node_$node_num.log
-wallets_path=./node_$node_num/wallet
-ca_folders=[./node_$node_num/ca]
-dap_global_db_path=./node_$node_num/global_db
+pid_path=$pid_path
+log_file=$log_file
+wallets_path=$wallets_path
+ca_folders=$ca_folders
+dap_global_db_path=$dap_global_db_path
 dap_global_db_driver=cdb

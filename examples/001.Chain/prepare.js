@@ -27,6 +27,7 @@ var seedNodeIndex = 0;
 var tokenName = 'KIM';
 var expectedPlasmaEventsCount = 1;
 var expectedZerochainEventsCount = 3;
+var sharedCertificatesFolder = "./node_shared/ca";
 
 // Checks
 assert(nodeCount > 0);
@@ -90,11 +91,14 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
 
 for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
     var nodeFolder = `node_${nodeIndex}`;
+    var certificatesFolder = path.join(nodeFolder, "ca");
+    var walletsFolder = path.join(nodeFolder, "wallets");
     var networkPath = path.join(nodeFolder, "network")
     var devnetPath = path.join(networkPath, netName)
     fs.mkdirSync(devnetPath, {recursive:true});
-    fs.mkdirSync(path.join(nodeFolder, "ca"));
-    fs.mkdirSync(path.join(nodeFolder, "wallet"));
+    fs.mkdirSync(certificatesFolder);
+    fs.mkdirSync(walletsFolder);
+    fs.mkdirSync(sharedCertificatesFolder, {recursive:true});
 
     folders.push(nodeFolder);
 
@@ -116,6 +120,16 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
         "$seed_mode": getSeedMode(nodeIndex),
         "$tokens_hold": `[${tokenName}]`,
         "$tokens__hold_value": "[1000000000]",
+        "$listen_unix_socket_path": `/tmp/node_cli_${nodeIndex}`,
+        "$pid_path": `${nodeFolder}/node_${nodeIndex}.pid`,
+        "$log_file": `${nodeFolder}/node_${nodeIndex}.log`,
+        "$wallets_path" : walletsFolder,
+        "$ca_folders": `[${certificatesFolder},${sharedCertificatesFolder}]`,
+        "$dap_global_db_path": `${nodeFolder}/global_db`,
+        "$net_name": netName,
+        "$zerochain_storage_dir": `${nodeFolder}/network/${netName}/zerochain`,
+        "$auth_certs_dir": sharedCertificatesFolder,
+        "$plasma_storage_dir": `${nodeFolder}/network/${netName}/plasma`,
     };
 
     var tempaltesAndFolders = [
@@ -140,15 +154,11 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
     }
 }
 
-// Copy public certificates between nodes
-for (var node_index = 0; node_index < nodeCount; ++node_index) {
-    for (var root_node_index = 0; root_node_index < rootNodesCount; ++root_node_index) {
-        if (node_index !== root_node_index) {
-            var public_key_path = path.join(folders[root_node_index], "ca", `${poaCertPublicName}.${root_node_index}.dcert`);
-            var target_path = path.join(folders[node_index], "ca", `${poaCertPublicName}.${root_node_index}.dcert`);
-            fs.copyFileSync(public_key_path, target_path);
-        }
-    }
+// Copy public certificates to shared folder
+for (var root_node_index = 0; root_node_index < rootNodesCount; ++root_node_index) {
+    var public_key_path = path.join(folders[root_node_index], "ca", `${poaCertPublicName}.${root_node_index}.dcert`);
+    var target_path = path.join(sharedCertificatesFolder, `${poaCertPublicName}.${root_node_index}.dcert`);
+    fs.copyFileSync(public_key_path, target_path);
 }
 
 function parseOutput(output, firstStr, separator, valueIndex) {
@@ -290,14 +300,20 @@ function UpdateConfigs(zerochainEventId, plasmaEventId) {
     }
 }
 
-// Start Seed Node
-var nodeProcess = spawn('node', ['./server.js', folders[seedNodeIndex]], {'stdio': ['ignore', 'ignore', 'ignore']});
+function spawnNode(nodeIndex) {
+    var nodeProcess = spawn('node', ['./server.js', folders[nodeIndex]], {'stdio': ['ignore', 'ignore', 'ignore']});
 
-function killRunningNode() {
-    var nodePromise = new Promise((resolve, reject) => nodeProcess.on('exit', resolve));
-    nodeProcess.kill('SIGINT');
-    return nodePromise;
+    function killRunningNode() {
+        var nodePromise = new Promise((resolve, reject) => nodeProcess.on('exit', resolve));
+        nodeProcess.kill('SIGINT');
+        return nodePromise;
+    }
+
+    return killRunningNode;
 }
+
+// Start Seed Node
+var killRunningNode = spawnNode(seedNodeIndex)
 
 var prepared = PrepareNodes();
 var nodeIsDone = prepared.finally(killRunningNode);
