@@ -177,11 +177,11 @@ function parseFirstIdFromOutput(output, netName) {
         }
     }
     var datumId = null;
-    if (datumIndex > 0) {
+    if (datumIndex > 0 && parts[datumIndex].indexOf(':') > 0) {
         datumId = parts[datumIndex].split(':')[0].trim();
         assert(datumId.length === 66);
     } else {
-        throw new Error("Can't find id");
+        throw new Error("Can't parse id.\nOUTPUT>>>\n" + output.toString() + "\n<<<OUTPUT");
     }
 
     return datumId;
@@ -205,6 +205,20 @@ async function Try(times, cmd) {
     }
 
     throw lastError;
+}
+
+function checkEvents(nodeFolder, netName) {
+    var output10 = execSync(`node ./client.js "${nodeFolder}" dag -net "${netName}" -chain plasma event list -from events`);
+    var plasmaEventsCount = parseInt(parseOutput(output10, netName, " ", 2)[0], 10);
+    assert.equal(plasmaEventsCount, expectedPlasmaEventsCount);
+    var plasmaEventId = parseFirstIdFromOutput(output10, netName);
+
+    var output11 = execSync(`node ./client.js "${nodeFolder}" dag -net "${netName}" -chain zerochain event list -from events`);
+    var zerochainEventsCount = parseInt(parseOutput(output11, netName, " ", 2)[0], 10);
+    assert.equal(zerochainEventsCount, expectedZerochainEventsCount);
+    var zerochainEventId = parseFirstIdFromOutput(output11, netName);
+
+    return {zerochainEventId,plasmaEventId};
 }
 
 async function PrepareNodes() {
@@ -252,17 +266,7 @@ async function PrepareNodes() {
 
     // Step #6: Check events count
     process.stdout.write('.');
-    var output10 = execSync(`node ./client.js "${nodeFolder}" dag -net "${netName}" -chain plasma event list -from events`);
-    var plasmaEventsCount = parseInt(parseOutput(output10, netName, " ", 2)[0], 10);
-    assert.equal(plasmaEventsCount, expectedPlasmaEventsCount);
-    var plasmaEventId = parseFirstIdFromOutput(output10, netName);
-
-    var output11 = execSync(`node ./client.js "${nodeFolder}" dag -net "${netName}" -chain zerochain event list -from events`);
-    var zerochainEventsCount = parseInt(parseOutput(output11, netName, " ", 2)[0], 10);
-    assert.equal(zerochainEventsCount, expectedZerochainEventsCount);
-    var zerochainEventId = parseFirstIdFromOutput(output11, netName);
-
-    return {zerochainEventId, plasmaEventId};
+    return checkEvents(nodeFolder, netName);
 }
 
 function UpdateConfigs(zerochainEventId, plasmaEventId) {
@@ -318,11 +322,72 @@ var killRunningNode = spawnNode(seedNodeIndex)
 var prepared = PrepareNodes();
 var nodeIsDone = prepared.finally(killRunningNode);
 
-var p1 = prepared.then(function success(data) {
+var preparationsAreSucceeded = prepared.then(function success(data) {
     process.stdout.write('.');
     var {zerochainEventId, plasmaEventId} = data;
     return nodeIsDone.then(_ => UpdateConfigs(zerochainEventId, plasmaEventId));
 });
 
-// Make nodejs shut up about unhandled rejections
-Promise.all([nodeIsDone, p1]).catch(console.error.bind(console)).finally(_ => console.log());
+var preparationsAreFinished = Promise.allSettled([nodeIsDone, preparationsAreSucceeded]).finally(_ => console.log());
+
+
+// Check that newly created net is functioning properly
+var attempts = 5; // TODO: move to config
+var allNodesAreInSync = false;
+function onSyncError() {
+    attempts -= 1;
+}
+function checkEventsOnEveryNode() {
+    folders.forEach(nodeFolder => checkEvents(nodeFolder, netName));
+    allNodesAreInSync = true;
+}
+
+function CheckAllNodes() {
+    if (allNodesAreInSync) {
+        return Promise.resolve(true);
+    } else if (Object.prototype.toString.call(attempts) !== "[object Number]" || attempts < 0) {
+        console.error("Invalid attempts value");
+        return Promise.reject();
+    } else if (attempts === 0) {
+        console.error("Nodes are not in sync. Remove node folders and try again.");
+        return Promise.reject();
+    }
+
+    process.stdout.write('.');
+
+    // Step #1: Launch all nodes
+    var nodeProcesses = folders.map(nodeFolder => spawn('node', ['./server.js', nodeFolder], {'stdio': ['ignore', 'pipe', 'ignore']}));
+    var killFunctions = nodeProcesses.map(nodeProcess => function killRunningNode() {
+        var nodePromise = new Promise((resolve, reject) => nodeProcess.on('exit', resolve));
+        nodeProcess.kill('SIGINT');
+        return nodePromise;
+    });
+
+    // Step #2: Wait until they all are in sync
+    var syncLine = '[INF] [chain_net] Synchronization done';
+    var syncPromises = nodeProcesses.map(function(subprocess) {
+        return new Promise(function(resolve, reject) {
+            var prevPart = '';
+            subprocess.stdout.on('data', function(chunk) {
+                var data = prevPart + chunk;
+                if (data.indexOf(syncLine) >= 0) {
+                    process.stdout.write('.');
+                    resolve(true);
+                } else {
+                    prevPart = chunk.slice(-1 * syncLine.length);
+                }
+            });
+
+            subprocess.stdout.on('error', reject);
+            subprocess.stdout.on('end', reject);
+            subprocess.stdout.on('close', reject);
+        });
+    });
+
+    // Step #3: Check events on every node. If at least one is not - relaunch all and check again
+    return Promise.all(syncPromises).then(checkEventsOnEveryNode).catch(onSyncError).finally(_ => {
+        return Promise.allSettled(killFunctions.map(f => f())).then(CheckAllNodes);
+    });
+}
+
+Promise.all([preparationsAreFinished, preparationsAreSucceeded]).then(CheckAllNodes).catch(console.error.bind(console)).finally(_ => console.log());
