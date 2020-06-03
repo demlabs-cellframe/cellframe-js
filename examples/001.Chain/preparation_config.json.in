@@ -1,0 +1,19 @@
+{
+    "nodeCount": 2,
+    "rootNodesCount": 1,
+    "seedNodeIndex": 0,
+    "netName": "devnet",
+
+    "localhost": "127.0.0.1",
+    "basePortNumber": 8090,
+
+    "walletSignature": "sig_dil",
+    "certKeyType": "sig_dilithium",
+    "poaCertName": "poa",
+    "poaCertPublicName": "poa.pub",
+
+    "tokenName": "TOKEN",
+    "expectedPlasmaEventsCount": 1,
+    "expectedZerochainEventsCount": 3,
+    "synchronizationAttempts": 5
+}

@@ -13,21 +13,26 @@ execSync = function(str) {
 };
 */
 
+if (fs.existsSync("preparation_config.json") === false) {
+    throw new Error("Copy and rename 'preparation_config.json.in' to 'preparation_config.json'");
+}
+
 // Config
-var nodeCount = 2;
-var rootNodesCount = 1;
-var basePortNum = 8090;
-var localhost = "127.0.0.1";
-var walletSignature = "sig_dil";
-var certKeyType = "sig_dilithium";
-var poaCertName = "poa";
-var poaCertPublicName = "poa.pub";
-var netName = 'devnet';
-var seedNodeIndex = 0;
-var tokenName = 'KIM';
-var expectedPlasmaEventsCount = 1;
-var expectedZerochainEventsCount = 3;
-var sharedCertificatesFolder = "./node_shared/ca";
+var cfg = require("./preparation_config.json");
+var nodeCount = cfg.nodeCount;
+var rootNodesCount = cfg.rootNodesCount;
+var basePortNum = cfg.basePortNumber;
+var localhost = cfg.localhost;
+var walletSignature = cfg.walletSignature;
+var certKeyType = cfg.certKeyType;
+var poaCertName = cfg.poaCertName;
+var poaCertPublicName = cfg.poaCertPublicName;
+var netName = cfg.netName;
+var seedNodeIndex = cfg.seedNodeIndex;
+var tokenName = cfg.tokenName;
+var expectedPlasmaEventsCount = cfg.expectedPlasmaEventsCount;
+var expectedZerochainEventsCount = cfg.expectedZerochainEventsCount;
+var sharedCertificatesFolder = './node_shared/ca';
 
 // Checks
 assert(nodeCount > 0);
@@ -332,10 +337,11 @@ var preparationsAreFinished = Promise.allSettled([nodeIsDone, preparationsAreSuc
 
 
 // Check that newly created net is functioning properly
-var attempts = 5; // TODO: move to config
+var synchronizationAttempts = cfg.synchronizationAttempts;
+fs.writeFileSync('myjsonfile.json', JSON.stringify(cfg), 'utf8');
 var allNodesAreInSync = false;
 function onSyncError() {
-    attempts -= 1;
+    synchronizationAttempts -= 1;
 }
 function checkEventsOnEveryNode() {
     folders.forEach(nodeFolder => checkEvents(nodeFolder, netName));
@@ -345,10 +351,10 @@ function checkEventsOnEveryNode() {
 function CheckAllNodes() {
     if (allNodesAreInSync) {
         return Promise.resolve(true);
-    } else if (Object.prototype.toString.call(attempts) !== "[object Number]" || attempts < 0) {
-        console.error("Invalid attempts value");
+    } else if (Object.prototype.toString.call(synchronizationAttempts) !== "[object Number]" || synchronizationAttempts < 0) {
+        console.error("Invalid synchronizationAttempts value");
         return Promise.reject();
-    } else if (attempts === 0) {
+    } else if (synchronizationAttempts === 0) {
         console.error("Nodes are not in sync. Remove node folders and try again.");
         return Promise.reject();
     }
