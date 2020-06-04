@@ -13,6 +13,27 @@ execSync = function(str) {
 };
 */
 
+// nodejs v10 does not support allSettled
+if (Promise.allSettled == null) {
+    Promise.allSettled = function allSettled_polyfill(iterable) {
+        var self = this;
+        return self.all(iterable.map(function (item) {
+            var onFulfill = function (value) {
+                return { status: 'fulfilled', value: value };
+            };
+            var onReject = function (reason) {
+                return { status: 'rejected', reason: reason };
+            };
+            var itemPromise = self.resolve(item);
+            try {
+                return itemPromise.then(onFulfill, onReject);
+            } catch (e) {
+                return self.reject(e);
+            }
+        }));
+    };
+}
+
 if (fs.existsSync("preparation_config.json") === false) {
     throw new Error("Copy and rename 'preparation_config.json.in' to 'preparation_config.json'");
 }
@@ -100,9 +121,11 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
     var walletsFolder = path.join(nodeFolder, "wallets");
     var networkPath = path.join(nodeFolder, "network")
     var devnetPath = path.join(networkPath, netName)
+    var globalDBPath = `${nodeFolder}/global_db`;
     fs.mkdirSync(devnetPath, {recursive:true});
     fs.mkdirSync(certificatesFolder);
     fs.mkdirSync(walletsFolder);
+    fs.mkdirSync(globalDBPath);
     fs.mkdirSync(sharedCertificatesFolder, {recursive:true});
 
     folders.push(nodeFolder);
@@ -130,7 +153,7 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
         "$log_file": `${nodeFolder}/node_${nodeIndex}.log`,
         "$wallets_path" : walletsFolder,
         "$ca_folders": `[${certificatesFolder},${sharedCertificatesFolder}]`,
-        "$dap_global_db_path": `${nodeFolder}/global_db`,
+        "$dap_global_db_path": globalDBPath,
         "$net_name": netName,
         "$zerochain_storage_dir": `${nodeFolder}/network/${netName}/zerochain`,
         "$auth_certs_dir": sharedCertificatesFolder,
@@ -338,7 +361,7 @@ var preparationsAreFinished = Promise.allSettled([nodeIsDone, preparationsAreSuc
 
 // Check that newly created net is functioning properly
 var synchronizationAttempts = cfg.synchronizationAttempts;
-fs.writeFileSync('myjsonfile.json', JSON.stringify(cfg), 'utf8');
+
 var allNodesAreInSync = false;
 function onSyncError() {
     synchronizationAttempts -= 1;
