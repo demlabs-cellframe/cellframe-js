@@ -1,3 +1,4 @@
+var fs = require('fs');
 var dap = require("../../packages/cellframe-sdk-nodejs");
 var common = require("./common.js");
 
@@ -27,6 +28,16 @@ function readConfig(init_context) {
     init_context.stream_ctl_keytype = cfg.getString("server", "stream_ctl_keytype");
     init_context.stream_ctl_keytype = dap.key.tryToConvertKeyType(init_context.stream_ctl_keytype);
     init_context.stream_ctl_keytype_size = cfg.getInt32("server", "stream_ctl_keytype_size");
+    init_context.pid_path = cfg.getString("resources", "pid_path");
+}
+
+function closeConfig(init_context) {
+    init_context.cfg.close();
+}
+
+function writePID(init_context) {
+    dap.logger.debug("pid_path:", init_context.pid_path,"  PID:", process.pid);
+    fs.writeFileSync(init_context.pid_path, String(process.pid), 'utf8');
 }
 
 function initServer(init_context) {
@@ -41,10 +52,6 @@ function deinitServer(init_context) {
     if (init_context.server_enabled) {
         dap.server.deinit();
     }
-}
-
-function closeConfig(init_context) {
-    init_context.cfg.close();
 }
 
 function startEvents(init_context) {
@@ -82,6 +89,7 @@ var [deinit, vars] = common.init(
     [setLoggerLevelToDebug],
     ["config", ["test_dir"]],
     [readConfig, closeConfig],
+    [writePID],
     //["server", ["server_threads"]], // replaced with custom init/deinit pair
     [initServer, deinitServer],
     ["events", ["events_threads", "events_timeout"]],

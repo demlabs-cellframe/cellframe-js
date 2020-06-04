@@ -121,7 +121,7 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
     var walletsFolder = path.join(nodeFolder, "wallets");
     var networkPath = path.join(nodeFolder, "network")
     var devnetPath = path.join(networkPath, netName)
-    var globalDBPath = `${nodeFolder}/global_db`;
+    var globalDBPath = path.join(nodeFolder, "global_db");
     fs.mkdirSync(devnetPath, {recursive:true});
     fs.mkdirSync(certificatesFolder);
     fs.mkdirSync(walletsFolder);
@@ -150,7 +150,6 @@ for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
         "$tokens__hold_value": "[1000000000]",
         "$listen_unix_socket_path": `/tmp/node_cli_${nodeIndex}`,
         "$pid_path": `${nodeFolder}/node_${nodeIndex}.pid`,
-        "$log_file": `${nodeFolder}/node_${nodeIndex}.log`,
         "$wallets_path" : walletsFolder,
         "$ca_folders": `[${certificatesFolder},${sharedCertificatesFolder}]`,
         "$dap_global_db_path": globalDBPath,
