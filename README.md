@@ -5,9 +5,9 @@ $ sudo apt-get install nodejs npm cmake libev-dev libmagic-dev libjson-c-dev lib
 $ npm install -g cmake-js
 ```
 
-I recommend to use nvm to manage node versions: https://github.com/nvm-sh/nvm
+I recommend to use nvm to manage nodejs versions: https://github.com/nvm-sh/nvm
 
-To build sdk you need to go to `packages/cellframe-sdk` and run
+To build sdk you need to go to `packages/cellframe-sdk-nodejs` and run
 ```
 cmake-js build --debug
 ```
