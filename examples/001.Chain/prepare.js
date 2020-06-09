@@ -293,7 +293,23 @@ async function PrepareNodes() {
 
     // Step #6: Check events count
     process.stdout.write('.');
-    return checkEvents(nodeFolder, netName);
+    var result = checkEvents(nodeFolder, netName);
+
+    // Step #7: Add links?
+    /*
+    for (var nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
+        if (nodeIndex != seedNodeIndex) {
+            execSync(`node ./client.js "${nodeFolder}" node link add -net "${netName}" -link ${makeAddr(nodeIndex)} -alias ${makeAlias(getRole(nodeIndex), nodeIndex)}`);
+        }
+    }
+    // DEBUG
+    var output_tmp = execSync(`node ./client.js "${nodeFolder}" node dump -net "${netName}"`);
+    console.log("DEBUG: output_tmp =", output_tmp.toString());
+
+    await Wait(5000);
+    */
+
+    return result;
 }
 
 function UpdateConfigs(zerochainEventId, plasmaEventId) {
@@ -366,7 +382,14 @@ function onSyncError() {
     synchronizationAttempts -= 1;
 }
 function checkEventsOnEveryNode() {
-    folders.forEach(nodeFolder => checkEvents(nodeFolder, netName));
+    folders.forEach(nodeFolder => {
+        try {
+            checkEvents(nodeFolder, netName);
+        } catch (e) {
+            console.log("ISSUE WITH: ", nodeFolder, e);
+            throw e;
+        }
+    });
     allNodesAreInSync = true;
 }
 
@@ -396,24 +419,51 @@ function CheckAllNodes() {
     var syncPromises = nodeProcesses.map(function(subprocess) {
         return new Promise(function(resolve, reject) {
             var prevPart = '';
-            subprocess.stdout.on('data', function(chunk) {
+            function onData(chunk) {
                 var data = prevPart + chunk;
                 if (data.indexOf(syncLine) >= 0) {
                     process.stdout.write('.');
+                    off();
                     resolve(true);
                 } else {
                     prevPart = chunk.slice(-1 * syncLine.length);
                 }
-            });
+            }
+            subprocess.stdout.on('data', onData);
 
-            subprocess.stdout.on('error', reject);
-            subprocess.stdout.on('end', reject);
-            subprocess.stdout.on('close', reject);
+            function off() {
+                subprocess.stdout.off('data', onData);
+                subprocess.stdout.off('error', myReject);
+                subprocess.stdout.off('end', myReject);
+                subprocess.stdout.off('close', myReject);
+            }
+
+            function myReject() {
+                off();
+                setTimeout(function()
+                {
+                    console.log("ISSUE WITH: ", subprocess.spawnargs);
+                    reject();
+                }, 2000);
+            }
+
+            subprocess.stdout.on('error', myReject);
+            subprocess.stdout.on('end', myReject);
+            subprocess.stdout.on('close', myReject);
         });
     });
 
     // Step #3: Check events on every node. If at least one is not - relaunch all and check again
-    return Promise.all(syncPromises).then(checkEventsOnEveryNode).catch(onSyncError).finally(_ => {
+    return Promise.all(syncPromises)
+    /*.then(Wait.bind(null, 20000))*/
+    .then(checkEventsOnEveryNode)
+    .catch(onSyncError)
+    .finally(_ => {
+        /*// For loop.sh
+        if (synchronizationAttempts === 0) {
+            process.exit(-1);
+            return -1;
+        }*/
         return Promise.allSettled(killFunctions.map(f => f())).then(CheckAllNodes);
     });
 }
