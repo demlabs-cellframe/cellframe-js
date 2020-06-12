@@ -49,10 +49,10 @@ napi_value js_dap_chain_net_deinit(napi_env env, napi_callback_info info)
 struct CommandContext {
     napi_threadsafe_function func;
     napi_ref js_context_ref;
+    uv_mutex_t mutex;
 };
 
 struct CommandData {
-    uv_mutex_t mutex;
     int argc;
     char **argv;
     char **str_reply;
@@ -102,6 +102,7 @@ void js_call_finalize(napi_env env, void* finalize_data, void* finalize_hint)
     {
         napi_delete_reference(env, cmd_context->js_context_ref);
     }
+    uv_mutex_destroy(&cmd_context->mutex);
     delete cmd_context;
 }
 
@@ -119,15 +120,13 @@ int cmd_function(int argc, char **argv, void* context, char **str_reply)
     cmd_data->argv = argv;
     cmd_data->str_reply = str_reply;
 
-    uv_mutex_init(&cmd_data->mutex);
-    uv_mutex_lock(&cmd_data->mutex);
+    uv_mutex_lock(&cmd_context->mutex);
 
     CHECK(napi_call_threadsafe_function(cmd_context->func, cmd_data, napi_tsfn_nonblocking));
 
     // CallJS function will unlock it
-    uv_mutex_lock(&cmd_data->mutex);
-    uv_mutex_unlock(&cmd_data->mutex);
-    uv_mutex_destroy(&cmd_data->mutex);
+    uv_mutex_lock(&cmd_context->mutex);
+    uv_mutex_unlock(&cmd_context->mutex);
 
     int result = cmd_data->result;
     delete cmd_data;
@@ -210,7 +209,7 @@ void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
 
     cmd_data->result = result;
 
-    uv_mutex_unlock(&cmd_data->mutex);
+    uv_mutex_unlock(&cmd_context->mutex);
 }
 
 /*
@@ -257,7 +256,9 @@ napi_value js_dap_chain_node_cli_cmd_item_create(napi_env env, napi_callback_inf
         CHECK(napi_create_reference(env, js_context, 1, &cmd_context->js_context_ref));
     }
 
-    // TODO: When can I release this reference?!!
+    uv_mutex_init(&cmd_context->mutex);
+
+    // TODO: When can I release this reference?!! (SDK does not have deinit function for custom commands)
     CHECK(napi_create_threadsafe_function(env, func, nullptr, args[0], 0, 1,
                                           cmd_context/*finalizer data*/,
                                           js_call_finalize /*finalizer*/,
