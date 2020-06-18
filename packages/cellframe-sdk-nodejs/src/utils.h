@@ -126,7 +126,6 @@ struct CallbackContext {
 
     // Use for calls from other threads
     napi_threadsafe_function func;
-    uv_mutex_t mutex;
 
     // optional context
     napi_ref js_context_ref;
@@ -136,7 +135,11 @@ struct CallbackContext {
     callback_result_converter_t convert_result;
 };
 
-CallbackContext* create_callback_context(napi_env env, napi_value js_function, napi_value js_context);
+int create_callback_context(
+    napi_env env, napi_value js_function, napi_value function_name, napi_value js_context,
+    callback_arguments_converter_t arguments_converter /*required*/,
+    callback_result_converter_t result_converter /*optional*/,
+    CallbackContext** result);
 void native_callback(void* cmd_data, CallbackContext* cmd_context);
 
 void utils_init();

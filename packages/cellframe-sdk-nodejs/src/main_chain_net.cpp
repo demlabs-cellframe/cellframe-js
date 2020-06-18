@@ -97,7 +97,7 @@ int cmd_function(int argc, char **argv, void* context, char **str_reply)
 
     native_callback(&cmd_data, (CallbackContext*)context);
 
-    return cmd_data->result;
+    return cmd_data.result;
 }
 
 static void arguments_converter(napi_env env, napi_value js_context, void* data, int* out_argc, napi_value** out_argv)

@@ -79,40 +79,15 @@ static void js_call_finalize(napi_env env, void* finalize_data, void* finalize_h
         napi_delete_reference(env, cmd_context->js_context_ref);
     }
     napi_delete_reference(env, cmd_context->js_func_ref);
-    uv_mutex_destroy(&cmd_context->mutex);
     delete cmd_context;
 }
 
-
-/*
-    This is a common entry point for every callback to JS interpreter.
-
-    It will call a threadsafe wrapper for a callback and wait until it's finished using a mutex.
-*/
-void native_callback(void* cmd_data, CallbackContext* cmd_context)
+struct CallbackData
 {
-    napi_status status;
-
-    bool main_thread = is_main_thread();
-
-    uv_mutex_lock(&cmd_context->mutex);
-
-    if (main_thread)
-    {
-        napi_value js_func;
-        CHECK(napi_get_reference_value(cmd_context->env, cmd_context->js_func_ref, &js_func));
-        CallJS(cmd_context->env, js_func, cmd_context, cmd_data);
-    }
-    else
-    {
-        CHECK(napi_call_threadsafe_function(cmd_context->func, cmd_data, napi_tsfn_nonblocking));
-
-        // Wait until CallJS unlock it
-        uv_mutex_lock(&cmd_context->mutex);
-        uv_mutex_unlock(&cmd_context->mutex);
-    }
-}
-
+    void* data;
+    uv_mutex_t mutex;
+    bool locked;
+};
 
 /*
     This function will be called on a main thread of NodeJS
@@ -122,6 +97,7 @@ void native_callback(void* cmd_data, CallbackContext* cmd_context)
 static void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
 {
     CallbackContext* cmd_context = (CallbackContext*)context;
+    CallbackData* cb_data = (CallbackData*)data;
 
     assert(cmd_context->convert_args != nullptr);
 
@@ -145,7 +121,7 @@ static void CallJS(napi_env env, napi_value js_callback, void* context, void* da
     napi_value* cmd_argv = nullptr;
 
     // MAY THROW JS EXCEPTION.
-    cmd_context->convert_args(env, js_context, data, &cmd_argc, &cmd_argv);
+    cmd_context->convert_args(env, js_context, cb_data->data, &cmd_argc, &cmd_argv);
 
     // MAY THROW JS EXCEPTION.
     status = napi_call_function(env, undefined, js_callback, cmd_argc, cmd_argv, &js_result);
@@ -160,10 +136,49 @@ static void CallJS(napi_env env, napi_value js_callback, void* context, void* da
     if (cmd_context->convert_result != nullptr)
     {
         // This function should check for exception that may happen during execution of a callback or arguments converter
-        cmd_context->convert_result(env, js_result, data);
+        cmd_context->convert_result(env, js_result, cb_data->data);
     }
 
-    uv_mutex_unlock(&cmd_context->mutex);
+    if (cb_data->locked)
+    {
+        uv_mutex_unlock(&cb_data->mutex);
+    }
+}
+
+/*
+    This is a common entry point for every callback to JS interpreter.
+
+    It will call a threadsafe wrapper for a callback and wait until it's finished using a mutex.
+*/
+void native_callback(void* cmd_data, CallbackContext* cmd_context)
+{
+    napi_status status;
+
+    bool main_thread = is_main_thread();
+    CallbackData cb_data;
+    cb_data.data = cmd_data;
+
+    if (main_thread)
+    {
+        napi_value js_func;
+        CHECK(napi_get_reference_value(cmd_context->env, cmd_context->js_func_ref, &js_func));
+
+        cb_data.locked = false;
+        CallJS(cmd_context->env, js_func, cmd_context, &cb_data);
+    }
+    else
+    {
+        uv_mutex_init(&cb_data.mutex);
+        uv_mutex_lock(&cb_data.mutex);
+
+        cb_data.locked = true;
+        CHECK(napi_call_threadsafe_function(cmd_context->func, &cb_data, napi_tsfn_nonblocking));
+
+        // Wait until CallJS unlock it
+        uv_mutex_lock(&cb_data.mutex);
+        uv_mutex_unlock(&cb_data.mutex);
+        uv_mutex_destroy(&cb_data.mutex);
+    }
 }
 
 /*
@@ -177,6 +192,7 @@ int create_callback_context(
     CallbackContext** result
 )
 {
+    napi_status status;
     assert(arguments_converter != nullptr);
 
     napi_valuetype context_type;
@@ -195,8 +211,6 @@ int create_callback_context(
 
     CHECK(napi_create_reference(env, js_function, 1, &cmd_context->js_func_ref));
     cmd_context->env = env;
-
-    uv_mutex_init(&cmd_context->mutex);
 
     // TODO: When can I release this reference?!! (SDK does not have deinit function for globalDB callbacks)
     CHECK(napi_create_threadsafe_function(env, js_function, nullptr, function_name, 0, 1,
