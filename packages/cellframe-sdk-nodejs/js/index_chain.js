@@ -25,6 +25,18 @@ exports.chain.globalDB = {
     deinit: function chain_global_db_deinit() {
         return addon.dap_chain_global_db_deinit();
     },
+    getValue: function chain_global_db_gr_get(key, groupName) {
+        return addon.dap_chain_global_db_gr_get(key, groupName);
+    },
+    setValue: function chain_global_db_gr_set(key, valueBuffer, groupName) {
+        return addon.dap_chain_global_db_gr_set(key, valueBuffer, groupName);
+    },
+    addHistoryGroupPrefix: function chain_global_db_add_history_group_prefix(prefix, groupName) {
+        return addon.dap_chain_global_db_add_history_group_prefix(prefix, groupName);
+    },
+    addHistoryCallbackNotify: function chain_global_db_add_history_callback_notify(prefix, callback, context) {
+        return addon.dap_chain_global_db_add_history_callback_notify(prefix, callback, context)
+    },
 };
 
 exports.chain.wallet = {
@@ -67,11 +79,18 @@ exports.chain.dag.poa = {
 };
 
 exports.chain.net = {
+    ChainNet: addon.ChainNet,
     init: function chain_net_init() {
         return addon.dap_chain_net_init();
     },
     deinit: function chain_net_deinit() {
         return addon.dap_chain_net_deinit();
+    },
+    netList: function chain_net_list() {
+        return addon.dap_chain_net_list();
+    },
+    findByName: function chain_net_find_by_name(netName) {
+        return new addon.ChainNet(netName);
     },
 };
 

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <assert.h>
 #include <node_api.h>
+#include <uv.h>
 
 // Check windows
 #if _WIN32 || _WIN64
@@ -104,3 +106,38 @@ bool InstanceOf(napi_env env, napi_value object)
 
     return result;
 }
+
+template<class T>
+void CreateInstance(napi_env env, size_t argc, napi_value* argv, napi_value* instance)
+{
+    napi_status status;
+    napi_value cons;
+    CHECK(napi_get_reference_value(env, T::constructor, &cons));
+    CHECK(napi_new_instance(env, cons, argc, argv, instance));
+}
+
+typedef void (*callback_arguments_converter_t)(napi_env env, napi_value js_context, void* data, int* argc, napi_value** argv);
+typedef void (*callback_result_converter_t)(napi_env env, napi_value js_result, void* data);
+
+struct CallbackContext {
+    // Use for calls from main thread
+    napi_ref js_func_ref;
+    napi_env env;
+
+    // Use for calls from other threads
+    napi_threadsafe_function func;
+    uv_mutex_t mutex;
+
+    // optional context
+    napi_ref js_context_ref;
+
+    // Native2JS converters
+    callback_arguments_converter_t convert_args;
+    callback_result_converter_t convert_result;
+};
+
+CallbackContext* create_callback_context(napi_env env, napi_value js_function, napi_value js_context);
+void native_callback(void* cmd_data, CallbackContext* cmd_context);
+
+void utils_init();
+bool is_main_thread();

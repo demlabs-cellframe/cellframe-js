@@ -1,5 +1,4 @@
-#include <node_api.h>
-
+#include "utils.h"
 
 napi_value CoreInit(napi_env env, napi_value exports);
 napi_value CryptoInit(napi_env env, napi_value exports);
@@ -18,6 +17,8 @@ napi_value ApplicationCLIInit(napi_env env, napi_value exports);
 
 static napi_value Init(napi_env env, napi_value exports)
 {
+    utils_init();
+
     exports = CoreInit(env, exports);
     exports = CryptoInit(env, exports);
     exports = ServerCoreInit(env, exports);

@@ -1,6 +1,12 @@
 #include <assert.h>
 #include "utils.h"
 
+#include <dap_common.h>
+
+#define LOG_TAG "utils_nodejs"
+
+static uv_thread_t main_thread;
+
 /*
     WARNING: Type check is omitted!
 */
@@ -62,4 +68,160 @@ napi_status napi_create_size(napi_env env, size_t value, napi_value* result)
 #else
     return napi_create_uint32(env, value, result);
 #endif
+}
+
+static void js_call_finalize(napi_env env, void* finalize_data, void* finalize_hint)
+{
+    log_it(L_DEBUG, "JS Finalizer is called");
+    CallbackContext* cmd_context = (CallbackContext*)finalize_data;
+    if (cmd_context->js_context_ref)
+    {
+        napi_delete_reference(env, cmd_context->js_context_ref);
+    }
+    napi_delete_reference(env, cmd_context->js_func_ref);
+    uv_mutex_destroy(&cmd_context->mutex);
+    delete cmd_context;
+}
+
+
+/*
+    This is a common entry point for every callback to JS interpreter.
+
+    It will call a threadsafe wrapper for a callback and wait until it's finished using a mutex.
+*/
+void native_callback(void* cmd_data, CallbackContext* cmd_context)
+{
+    napi_status status;
+
+    bool main_thread = is_main_thread();
+
+    uv_mutex_lock(&cmd_context->mutex);
+
+    if (main_thread)
+    {
+        napi_value js_func;
+        CHECK(napi_get_reference_value(cmd_context->env, cmd_context->js_func_ref, &js_func));
+        CallJS(cmd_context->env, js_func, cmd_context, cmd_data);
+    }
+    else
+    {
+        CHECK(napi_call_threadsafe_function(cmd_context->func, cmd_data, napi_tsfn_nonblocking));
+
+        // Wait until CallJS unlock it
+        uv_mutex_lock(&cmd_context->mutex);
+        uv_mutex_unlock(&cmd_context->mutex);
+    }
+}
+
+
+/*
+    This function will be called on a main thread of NodeJS
+    with a purpose to convert incoming data and result
+    and call a callback provided by JS code.
+*/
+static void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
+{
+    CallbackContext* cmd_context = (CallbackContext*)context;
+
+    assert(cmd_context->convert_args != nullptr);
+
+    napi_value js_result = nullptr;
+    napi_value undefined;
+    napi_value js_context = nullptr;
+    napi_status status;
+
+    CHECK(napi_get_undefined(env, &undefined));
+
+    if (cmd_context->js_context_ref)
+    {
+        CHECK(napi_get_reference_value(env, cmd_context->js_context_ref, &js_context));
+    }
+    else
+    {
+        js_context = undefined;
+    }
+
+    int cmd_argc = 0;
+    napi_value* cmd_argv = nullptr;
+
+    // MAY THROW JS EXCEPTION.
+    cmd_context->convert_args(env, js_context, data, &cmd_argc, &cmd_argv);
+
+    // MAY THROW JS EXCEPTION.
+    status = napi_call_function(env, undefined, js_callback, cmd_argc, cmd_argv, &js_result);
+
+    delete[] cmd_argv;
+
+    if (status != napi_ok && status != napi_pending_exception)
+    {
+        CHECK(status);
+    }
+
+    if (cmd_context->convert_result != nullptr)
+    {
+        // This function should check for exception that may happen during execution of a callback or arguments converter
+        cmd_context->convert_result(env, js_result, data);
+    }
+
+    uv_mutex_unlock(&cmd_context->mutex);
+}
+
+/*
+    Overall interraction is approximately looks like this:
+    Native code -> Developer's native callback -> native_callback defined above -> Threadsafe wrapper (optional) -> CallJS defined above -> Userdefined JS callback
+*/
+int create_callback_context(
+    napi_env env, napi_value js_function, napi_value function_name, napi_value js_context,
+    callback_arguments_converter_t arguments_converter /*required*/,
+    callback_result_converter_t result_converter /*optional*/,
+    CallbackContext** result
+)
+{
+    assert(arguments_converter != nullptr);
+
+    napi_valuetype context_type;
+    CHECK(napi_typeof(env, js_context, &context_type));
+    if (context_type != napi_undefined && context_type != napi_null && context_type != napi_object)
+    {
+        return -10;
+    }
+
+    CallbackContext *cmd_context = new CallbackContext();
+
+    if (context_type == napi_object)
+    {
+        CHECK(napi_create_reference(env, js_context, 1, &cmd_context->js_context_ref));
+    }
+
+    CHECK(napi_create_reference(env, js_function, 1, &cmd_context->js_func_ref));
+    cmd_context->env = env;
+
+    uv_mutex_init(&cmd_context->mutex);
+
+    // TODO: When can I release this reference?!! (SDK does not have deinit function for globalDB callbacks)
+    CHECK(napi_create_threadsafe_function(env, js_function, nullptr, function_name, 0, 1,
+                                          cmd_context/*finalizer data*/,
+                                          js_call_finalize /*finalizer*/,
+                                          cmd_context, CallJS, &cmd_context->func));
+
+    // TODO: Since I don't know when to release it, this will allow event loop to exit while reference exists
+    CHECK(napi_unref_threadsafe_function(env, cmd_context->func));
+
+    cmd_context->convert_args = arguments_converter;
+    cmd_context->convert_result = result_converter;
+
+    *result = cmd_context;
+
+    return 0;
+}
+
+void utils_init()
+{
+    main_thread = uv_thread_self();
+}
+
+bool is_main_thread()
+{
+    uv_thread_t this_thread = uv_thread_self();
+    return uv_thread_equal(&main_thread, &this_thread) != 0;
 }

@@ -9,7 +9,7 @@ extern "C" {
 
 #include "utils.h"
 #include "config.h"
-
+#include "chain_net.h"
 
 #define LOG_TAG "main_chain_net_nodejs"
 
@@ -45,12 +45,6 @@ napi_value js_dap_chain_net_deinit(napi_env env, napi_callback_info info)
     Chain Node CLI
 */
 
-
-struct CommandContext {
-    napi_threadsafe_function func;
-    napi_ref js_context_ref;
-    uv_mutex_t mutex;
-};
 
 struct CommandData {
     int argc;
@@ -94,54 +88,20 @@ napi_value js_dap_chain_node_cli_delete(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
-void js_call_finalize(napi_env env, void* finalize_data, void* finalize_hint)
-{
-    log_it(L_DEBUG, "JS Finalizer is called");
-    CommandContext* cmd_context = (CommandContext*)finalize_data;
-    if (cmd_context->js_context_ref)
-    {
-        napi_delete_reference(env, cmd_context->js_context_ref);
-    }
-    uv_mutex_destroy(&cmd_context->mutex);
-    delete cmd_context;
-}
-
-/*
-    This is a common entry point for every command callback from JS.
-
-    It will call a threadsafe wrapper for a callback and wait until it's finished using a mutex.
-*/
 int cmd_function(int argc, char **argv, void* context, char **str_reply)
 {
-    napi_status status;
-    CommandContext* cmd_context = (CommandContext*)context;
-    CommandData* cmd_data = new CommandData();
-    cmd_data->argc = argc;
-    cmd_data->argv = argv;
-    cmd_data->str_reply = str_reply;
+    CommandData cmd_data;
+    cmd_data.argc = argc;
+    cmd_data.argv = argv;
+    cmd_data.str_reply = str_reply;
 
-    uv_mutex_lock(&cmd_context->mutex);
+    native_callback(&cmd_data, (CallbackContext*)context);
 
-    CHECK(napi_call_threadsafe_function(cmd_context->func, cmd_data, napi_tsfn_nonblocking));
-
-    // CallJS function will unlock it
-    uv_mutex_lock(&cmd_context->mutex);
-    uv_mutex_unlock(&cmd_context->mutex);
-
-    int result = cmd_data->result;
-    delete cmd_data;
-
-    return result;
+    return cmd_data->result;
 }
 
-/*
-    This function will be called on a main thread of NodeJS
-    with a purpose to convert incoming data and result
-    and call a callback provided by JS code.
-*/
-void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
+static void arguments_converter(napi_env env, napi_value js_context, void* data, int* out_argc, napi_value** out_argv)
 {
-    CommandContext* cmd_context = (CommandContext*)context;
     CommandData* cmd_data = (CommandData*)data;
 
     int argc = cmd_data->argc;
@@ -149,23 +109,7 @@ void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
 
     int cmd_argc = argc + 1;
     napi_value *cmd_argv = new napi_value[cmd_argc];
-    napi_value js_result = nullptr;
-    napi_value undefined;
-    napi_value js_context = nullptr;
-    napi_valuetype arg_type;
     napi_status status;
-    int result = 0;
-
-    CHECK(napi_get_undefined(env, &undefined));
-
-    if (cmd_context->js_context_ref)
-    {
-        CHECK(napi_get_reference_value(env, cmd_context->js_context_ref, &js_context));
-    }
-    else
-    {
-        js_context = undefined;
-    }
 
     cmd_argv[0] = js_context;
 
@@ -174,19 +118,20 @@ void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
         CHECK(napi_create_string_utf8(env, argv[i], NAPI_AUTO_LENGTH, cmd_argv + i + 1));
     }
 
-    status = napi_call_function(env, undefined, js_callback, cmd_argc, cmd_argv, &js_result);
-    bool exception_is_pending = false;
+    *out_argc = cmd_argc;
+    *out_argv = cmd_argv;
+}
 
-    if (status == napi_pending_exception)
-    {
-        exception_is_pending = true;
-    }
-    else
-    {
-        CHECK(status);
-        CHECK(napi_is_exception_pending(env, &exception_is_pending));
-    }
+static void result_converter(napi_env env, napi_value js_result, void* data)
+{
+    napi_valuetype arg_type;
+    napi_status status;
+    int result = 0;
+    bool exception_is_pending;
 
+    CommandData* cmd_data = (CommandData*)data;
+
+    CHECK(napi_is_exception_pending(env, &exception_is_pending));
     CHECK(napi_typeof(env, js_result, &arg_type));
 
     if (exception_is_pending)
@@ -208,19 +153,8 @@ void CallJS(napi_env env, napi_value js_callback, void* context, void* data)
     }
 
     cmd_data->result = result;
-
-    uv_mutex_unlock(&cmd_context->mutex);
 }
 
-/*
-    Overall interraction is approximately looks like this:
-
-    Adding a callback:
-    JS Code -> js_dap_chain_node_cli_cmd_item_create -> CellFrame Code
-
-    Invoking a callback:
-    CellFrame Code -> cmd_function -> Threadsafe Wrapper -> CallJS Function -> JS Code
-*/
 napi_value js_dap_chain_node_cli_cmd_item_create(napi_env env, napi_callback_info info)
 {
     napi_status status;
@@ -235,43 +169,65 @@ napi_value js_dap_chain_node_cli_cmd_item_create(napi_env env, napi_callback_inf
     ARG_TYPE_CHECK(3, napi_string)
     ARG_TYPE_CHECK(4, napi_string)
 
-    napi_valuetype context_type;
-    CHECK(napi_typeof(env, args[2], &context_type));
-    if (context_type != napi_undefined && context_type != napi_null && context_type != napi_object)
-    {
-        napi_throw_type_error(env, nullptr, "Wrong context type: must be undefined, null or object");
-        return nullptr;
-    }
-
     char* cmd_name_buffer = extract_str(env, args[0], nullptr);
-    napi_value func = args[1];
     char* cmd_doc_buffer = extract_str(env, args[3], nullptr);
     char* cmd_doc_ex_buffer = extract_str(env, args[4], nullptr);
 
-    CommandContext *cmd_context = new CommandContext();
-    napi_value js_context = args[2];
-
-    if (context_type == napi_object)
+    CallbackContext *cmd_context = nullptr;
+    // Will check type of a context
+    int res = create_callback_context(env, args[1], args[0], args[2], arguments_converter, result_converter, &cmd_context);
+    if (res < 0)
     {
-        CHECK(napi_create_reference(env, js_context, 1, &cmd_context->js_context_ref));
+        if (res == -10)
+        {
+            napi_throw_type_error(env, nullptr, "Wrong context type: must be undefined, null or object");
+        }
+        else
+        {
+            napi_throw_type_error(env, nullptr, "Unexpected error");
+        }
     }
-
-    uv_mutex_init(&cmd_context->mutex);
-
-    // TODO: When can I release this reference?!! (SDK does not have deinit function for custom commands)
-    CHECK(napi_create_threadsafe_function(env, func, nullptr, args[0], 0, 1,
-                                          cmd_context/*finalizer data*/,
-                                          js_call_finalize /*finalizer*/,
-                                          cmd_context, CallJS, &cmd_context->func));
-
-    // TODO: Since I don't know when to release it, this will allow event loop to exit while reference exists
-    CHECK(napi_unref_threadsafe_function(env, cmd_context->func));
-
-    dap_chain_node_cli_cmd_item_create(cmd_name_buffer, cmd_function, cmd_context, cmd_doc_buffer, cmd_doc_ex_buffer);
+    else
+    {
+        dap_chain_node_cli_cmd_item_create(cmd_name_buffer, cmd_function, cmd_context, cmd_doc_buffer, cmd_doc_ex_buffer);
+    }
 
     delete[] cmd_name_buffer;
     delete[] cmd_doc_buffer;
     delete[] cmd_doc_ex_buffer;
+
+    return js_result;
+}
+
+
+/*
+*/
+
+
+napi_value js_dap_chain_net_list(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    napi_value js_result = nullptr;
+
+    ARG_COUNT_CHECK_UNIQUE(0)
+
+    uint16_t size;
+    dap_chain_net_t** result = dap_chain_net_list(&size);
+
+    CHECK(napi_create_array_with_length(env, size, &js_result));
+
+    napi_value empty_string;
+    CHECK(napi_create_string_utf8(env, "", 0, &empty_string));
+
+    ChainNet* obj = nullptr;
+    napi_value tmp_value;
+    for (uint16_t i = 0; i < size; ++i)
+    {
+        CreateInstance<ChainNet>(env, 1, &empty_string, &tmp_value);
+        CHECK(napi_unwrap(env, tmp_value, reinterpret_cast<void**>(&obj)));
+        obj->chain_net_ = result[i];
+        CHECK(napi_set_element(env, js_result, i, tmp_value));
+    }
 
     return js_result;
 }
@@ -290,8 +246,11 @@ napi_value ChainNetInit(napi_env env, napi_value exports)
         DECLARE_NAPI_METHOD("dap_chain_node_cli_init", js_dap_chain_node_cli_init),
         DECLARE_NAPI_METHOD("dap_chain_node_cli_delete", js_dap_chain_node_cli_delete),
         DECLARE_NAPI_METHOD("dap_chain_node_cli_cmd_item_create", js_dap_chain_node_cli_cmd_item_create),
+        DECLARE_NAPI_METHOD("dap_chain_net_list", js_dap_chain_net_list),
     };
     CHECK(napi_define_properties(env, exports, sizeof(desc)/sizeof(desc[0]), desc));
+
+    exports = ChainNet::Init(env, exports);
 
     return exports;
 }
